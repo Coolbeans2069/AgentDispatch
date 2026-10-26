@@ -1,0 +1,19 @@
+{
+ "id": "REL",
+ "title": "Release readiness - example campaign (a service going from spec to production)",
+ "authority": "NONE",
+ "gates": [
+  {"id": "SPEC-SIGNOFF", "title": "Specification signed off", "status": "CLOSED-AUDITED", "depends_on": [], "requires_human": true},
+  {"id": "G0.5", "title": "G0.5 governance: stack selected", "status": "CLOSED-GOVERNANCE", "depends_on": [], "requires_human": true},
+  {"id": "G04-API", "title": "G04-API endpoints implemented", "status": "CLOSED-AUDITED", "depends_on": ["SPEC-SIGNOFF"], "requires_human": true},
+  {"id": "G05-LP", "title": "G05-LP unit and integration tests green", "status": "CLOSED-AUDITED", "depends_on": ["G04-API"], "requires_human": true},
+  {"id": "G06", "title": "G06 API drift check against the spec", "status": "OPEN", "depends_on": ["G04-API", "G05-LP"], "requires_human": true},
+  {"id": "G07", "title": "G07 load test at target throughput", "status": "NOT_RUN", "depends_on": ["G06"], "requires_human": true},
+  {"id": "G08", "title": "G08 security review", "status": "NOT_RUN", "depends_on": ["G07"], "requires_human": true},
+  {"id": "DOCS", "title": "Operator documentation and runbook", "status": "NOT_RUN", "depends_on": ["G08"], "requires_human": true},
+  {"id": "FREEZE", "title": "Release freeze (every artifact hashed)", "status": "NOT_RUN", "depends_on": ["DOCS"], "requires_human": true},
+  {"id": "STAGING", "title": "Staging deployment (no hot fixes)", "status": "NOT_RUN", "depends_on": ["FREEZE"], "requires_human": true},
+  {"id": "PILOT", "title": "Pilot with one customer site", "status": "NOT_RUN", "depends_on": ["STAGING"], "requires_human": true},
+  {"id": "GA", "title": "General availability (later, separate decision)", "status": "NOT_RUN", "depends_on": ["PILOT"], "requires_human": true}
+ ]
+}

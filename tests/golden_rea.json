@@ -1,0 +1,167 @@
+[
+ {
+  "q": "find the IPC channels of an Electron app",
+  "any": [
+   "analyze_javascript_application",
+   "trace_application_feature"
+  ]
+ },
+ {
+  "q": "decompile a native function to pseudocode",
+  "any": [
+   "procedure_pseudo_code",
+   "analyze_function",
+   "batch_decompile"
+  ]
+ },
+ {
+  "q": "list the strings in a binary",
+  "any": [
+   "list_strings",
+   "search_strings"
+  ]
+ },
+ {
+  "q": "who calls this function",
+  "any": [
+   "procedure_callers",
+   "find_xrefs_to_name",
+   "xrefs",
+   "procedure_references"
+  ]
+ },
+ {
+  "q": "open a binary file for analysis",
+  "any": [
+   "open_binary",
+   "binary_session"
+  ]
+ },
+ {
+  "q": "inspect an Android APK",
+  "any": [
+   "inspect_android_package"
+  ]
+ },
+ {
+  "q": "list the classes in an APK",
+  "any": [
+   "search_android_classes",
+   "inspect_android_class",
+   "inspect_android_package"
+  ]
+ },
+ {
+  "q": "extract a firmware image",
+  "any": [
+   "extract_firmware",
+   "inspect_firmware_regions"
+  ]
+ },
+ {
+  "q": "analyze a .NET assembly",
+  "any": [
+   "inspect_managed_artifact",
+   "inspect_managed_members"
+  ]
+ },
+ {
+  "q": "take a screenshot of a web page",
+  "any": [
+   "capture_web_screenshot"
+  ]
+ },
+ {
+  "q": "inspect network requests from a HAR capture",
+  "any": [
+   "inspect_web_network_capture"
+  ]
+ },
+ {
+  "q": "compare two versions of an application",
+  "any": [
+   "compare_application_versions",
+   "compare_bundles",
+   "find_changed_behavior"
+  ]
+ },
+ {
+  "q": "read the logcat from an Android device",
+  "any": [
+   "read_adb_logcat"
+  ]
+ },
+ {
+  "q": "list connected adb devices",
+  "any": [
+   "list_adb_devices",
+   "inspect_adb_device"
+  ]
+ },
+ {
+  "q": "what interface does this EVM bytecode expose",
+  "any": [
+   "inspect_evm_interface"
+  ]
+ },
+ {
+  "q": "show the call graph",
+  "any": [
+   "get_call_graph",
+   "build_call_path",
+   "trace_call_path"
+  ]
+ },
+ {
+  "q": "disassemble a procedure to assembly",
+  "any": [
+   "procedure_assembly",
+   "read_function_instructions"
+  ]
+ },
+ {
+  "q": "list the segments of the binary",
+  "any": [
+   "list_segments",
+   "binary_overview"
+  ]
+ },
+ {
+  "q": "inspect Windows PE resources and icons",
+  "any": [
+   "inspect_pe_resources"
+  ]
+ },
+ {
+  "q": "analyse a recorded crash core dump",
+  "any": [
+   "inspect_recorded_crash"
+  ]
+ },
+ {
+  "q": "export the evidence bundle to a file",
+  "any": [
+   "export_evidence_bundle",
+   "get_evidence_bundle"
+  ]
+ },
+ {
+  "q": "read a plist file",
+  "any": [
+   "inspect_plist"
+  ]
+ },
+ {
+  "q": "run a browser scenario and capture what happens",
+  "any": [
+   "capture_browser_scenario",
+   "observe_web_session"
+  ]
+ },
+ {
+  "q": "list running processes on the android device",
+  "any": [
+   "list_adb_processes"
+  ]
+ }
+]

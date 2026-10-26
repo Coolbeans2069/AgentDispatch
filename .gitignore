@@ -1,0 +1,23 @@
+# runtime state: the board database, tokens, logs and job data live in the data folder, never in git
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.log
+*.jsonl
+tokens.json
+token.txt
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.bak

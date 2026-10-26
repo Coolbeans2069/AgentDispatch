@@ -1,0 +1,290 @@
+{
+ "_about": "What each agent can really do and how to prompt it. Built from the registry (run argv / flags), the code (realadapters, agentic, tools) and observed run history. Values marked 'unknown' or 'unverified' were not proven. data/agent_profiles.json (same shape) overrides any field. Live availability, cooldowns and success rates are merged in at prompt time (agency/profiles.py). Each agent's \"prompt\" block (how_run, step/plan/review, length) is put in front of its step, plan and review prompts by realadapters.guided(); passes/json_mode document how the prompt reaches it.",
+ "agents": {
+  "claude-code": {
+   "can_run_code": false,
+   "can_read_files": "only the files pasted into the prompt",
+   "can_read_web": false,
+   "can_see_images": "unverified (prompt is text on stdin)",
+   "evidence": "registry argv: claude -p --tools \"\" (all tools off)",
+   "good_for": [
+    "planning",
+    "hard code changes",
+    "reviews",
+    "long context"
+   ],
+   "prompt_tips": "Give the goal, the exact files (complete text) and the check; ask for ONE JSON patch. Strongest planner and reviewer; spend it on the hard parts.",
+   "known_failures": [
+    "unrecognized_model for a malformed local-variant model name; fixed by the variant-naming change",
+    "premium plan limits (daily_cap 15)"
+   ],
+   "stage_runs": {
+    "ok": 55,
+    "failed": 37,
+    "limit": 1
+   },
+   "prompt": {
+    "how_run": "`claude -p` with every tool switched off (--tools \"\"); the prompt arrives on stdin. You cannot open files, run commands or browse: everything you can use is in this prompt. Your reply (stdout) is parsed as the JSON object.",
+    "passes": "stdin",
+    "json_mode": "none used (the CLI has --json-schema / --output-format json; not adopted: unverified with these task schemas, the reply is parsed tolerantly instead)",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you).",
+    "plan": "Each objective is all its agent sees besides the goal: make it complete and self-contained (files, the exact change or result, how it is checked).",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work.",
+    "length": "As long as the task needs; your output limit is large. Do not think out loud in the reply."
+   }
+  },
+  "codex-cli": {
+   "can_run_code": "unverified: codex exec -s read-only can run read-only commands in the workspace copy; writes are blocked",
+   "can_read_files": "yes, the workspace copy (-C {cwd})",
+   "can_read_web": "unverified (read-only sandbox, no network by default)",
+   "can_see_images": false,
+   "evidence": "registry argv: codex exec -s read-only --skip-git-repo-check --ephemeral -C {cwd} -",
+   "good_for": [
+    "code changes",
+    "planning",
+    "reviews"
+   ],
+   "prompt_tips": "Concrete file paths and the acceptance check; it can look at the copy itself, so name files rather than pasting all of them. Reply must still be the JSON patch.",
+   "known_failures": [
+    "usage-limit messages (plan window)"
+   ],
+   "stage_runs": {
+    "ok": 171,
+    "failed": 103
+   },
+   "prompt": {
+    "how_run": "`codex exec` in a READ-ONLY sandbox with your working folder set to a COPY of the project; the prompt arrives on stdin. You may read files and run read-only commands to check things, but nothing you write is kept: every change must be in your final JSON reply. Your final message is what is parsed.",
+    "passes": "stdin (exec -)",
+    "json_mode": "none used (--output-schema exists; not adopted: a files map with free keys does not fit a strict schema)",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you). Read the files you change before you rewrite them.",
+    "plan": "Each objective is all its agent sees besides the goal: make it complete and self-contained (files, the exact change or result, how it is checked).",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work. You can open the files in the copy to check the change.",
+    "length": "As long as the task needs. Your final message must be only the JSON object."
+   }
+  },
+  "gemini-cli": {
+   "can_run_code": "unknown",
+   "can_read_files": "unknown (non-interactive -p mode; its built-in read-only tools were not disabled or verified)",
+   "can_read_web": "unknown (Google search tool not disabled; not verified)",
+   "can_see_images": "unknown",
+   "evidence": "registry argv: gemini --skip-trust -p ... -o text (no tool flags)",
+   "good_for": [
+    "research",
+    "long context",
+    "writing",
+    "reviews",
+    "planning (third choice)"
+   ],
+   "prompt_tips": "Long context is its strength: give whole documents. Ask for the JSON shape last; it follows the last instruction.",
+   "known_failures": [
+    "model list falls back across flash variants",
+    "occasional long runs (avg 308 s on failures)"
+   ],
+   "stage_runs": {
+    "ok": 283,
+    "failed": 5,
+    "limit": 3
+   },
+   "prompt": {
+    "how_run": "`gemini -p` non-interactive; the prompt arrives on stdin. Do not try to write files or run commands with your built-in tools: nothing on disk is kept and the agency only reads your final reply.",
+    "passes": "stdin (+ a short -p pointer)",
+    "json_mode": "none used (-o json wraps the reply in an envelope; -o text is parsed tolerantly)",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you).",
+    "plan": "Each objective is all its agent sees besides the goal: make it complete and self-contained (files, the exact change or result, how it is checked).",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work.",
+    "length": "As long as the task needs; you have a long context and output, so do not summarise files. The JSON object is the whole reply."
+   }
+  },
+  "grok-cli": {
+   "can_run_code": false,
+   "can_read_files": "only the prompt",
+   "can_read_web": false,
+   "can_see_images": false,
+   "evidence": "registry argv: grok --tools \"\" --disable-web-search --prompt-file {prompt_file} (verified 2026-10-25 grok 1.0.62 read a 44,648-character prompt file whole)",
+   "good_for": [
+    "research from given material",
+    "writing",
+    "reviews"
+   ],
+   "prompt_tips": "The prompt is passed in a file: no command-line size limit any more. Paste what it needs; it cannot read files itself.",
+   "known_failures": [
+    "prompt via stdin is ignored (it explores the disk) - it must be an argument or --prompt-file",
+    "old argv -p {prompt} was cut to 24000 characters by the Windows command-line limit (replaced)"
+   ],
+   "stage_runs": {
+    "ok": 25,
+    "failed": 2
+   },
+   "prompt": {
+    "how_run": "`grok` with all tools and web search off; the prompt is read from a file (--prompt-file), so nothing in it was cut to fit a command line. You cannot open files, run commands or browse: everything you can use is in this prompt.",
+    "passes": "prompt_file (verified 2026-10-25: 44,648-character prompt read whole)",
+    "json_mode": "none used (--json-schema changes the output envelope; not adopted)",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you).",
+    "plan": "Each objective is all its agent sees besides the goal: make it complete and self-contained (files, the exact change or result, how it is checked).",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work.",
+    "length": "As long as the task needs. The JSON object is the whole reply."
+   }
+  },
+  "openrouter": {
+   "can_run_code": false,
+   "can_read_files": "only the prompt",
+   "can_read_web": false,
+   "can_see_images": "some listed models are vision models; unverified through this path",
+   "evidence": "registry: via router, free-tier models",
+   "good_for": [
+    "cheap drafts",
+    "simple text"
+   ],
+   "never": [
+    "planning",
+    "architect plans or designs"
+   ],
+   "prompt_tips": "Short, single-purpose prompts with the exact JSON example; expect format slips.",
+   "known_failures": [
+    "free-tier rate limits (19 limit runs on stage)",
+    "route_stats code 0 of 9"
+   ],
+   "stage_runs": {
+    "ok": 20,
+    "failed": 23,
+    "limit": 19
+   },
+   "prompt": {
+    "how_run": "An API call through the router with JSON mode on (response_format json_object): no tools, no files, only this prompt.",
+    "passes": "router (chat API)",
+    "json_mode": "response_format json_object",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you).",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work.",
+    "length": "Complete but plain: the JSON object only, no thinking out loud, close every string and the object."
+   }
+  },
+  "ollama-local": {
+   "can_run_code": false,
+   "can_read_files": "only the prompt",
+   "can_read_web": false,
+   "can_see_images": "unknown",
+   "evidence": "registry: via router model auto-local (stage config uses a ~4B model)",
+   "good_for": [
+    "fast mechanical text",
+    "small edits with a clear example"
+   ],
+   "never": [
+    "planning",
+    "architect plans or designs",
+    "conductor / watchdog decisions"
+   ],
+   "prompt_tips": "One small task, the exact output example last; check everything it returns.",
+   "known_failures": [
+    "weak reasoning; produced an empty plan once (architect STRONG_ONLY note)"
+   ],
+   "stage_runs": {
+    "ok": 78,
+    "failed": 40
+   },
+   "prompt": {
+    "how_run": "A local model through the router with JSON mode on (Ollama format=json) and a context window sized to this prompt: no tools, no files, only this prompt.",
+    "passes": "router (Ollama /api/chat, num_ctx sized per prompt, num_predict = max_tokens)",
+    "json_mode": "format json",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you). Follow the example shape exactly.",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work.",
+    "length": "Answer directly with the JSON object; do not think out loud. Close every string and the object."
+   }
+  },
+  "ollama-agent": {
+   "can_run_code": true,
+   "can_read_files": "yes, the job's workspace copy at /work inside its container",
+   "can_read_web": "unverified (container; board / playbooks / local tools via the gateway)",
+   "can_see_images": "unknown",
+   "evidence": "registry via=agentic; agentic.py runs Claude Code against Ollama in Docker",
+   "good_for": [
+    "code that must be run and tested to get right",
+    "retries against an exact acceptance check"
+   ],
+   "never": [
+    "planning"
+   ],
+   "prompt_tips": "Give the goal and the check command; it runs the check itself. Needs Docker, the agent image and a valid model variant (BASE-ctxNk:TAG).",
+   "known_failures": [
+    "long silent runs (avg 2122 s on failures) - now killed when nothing changes past the timeout",
+    "malformed variant names (fixed)",
+    "startup self-test now marks unusable models"
+   ],
+   "stage_runs": {
+    "ok": 9,
+    "failed": 13
+   },
+   "prompt": {
+    "how_run": "Claude Code inside a Docker container, talking to a local Ollama model with a pinned context window; this prompt arrives on stdin. For a code job your project is a private copy at /work (edit files there, run the acceptance check yourself); /board (when present) holds BRIEF.md and job.json; the notice board, playbooks and local tools are reachable through the MCP server 'agentdispatch'.",
+    "passes": "container (Claude Code against Ollama, prompt on stdin)",
+    "json_mode": "n/a (final message is the answer; files are read from the container's /work)",
+    "step": "Make the change in /work and run the acceptance check until it exits 0; never edit or delete the check or the tests to make it pass (that is detected and reverted). For a text job (no project) your final message is the whole answer. If you cannot do it, say plainly why in your final message without changing files.",
+    "length": "Keep your final message short for a code job (what you changed, the check result); for a text job the final message is the complete answer."
+   }
+  },
+  "local-tools": {
+   "can_run_code": "yes: the allow-listed local tools only (calc, lean, pytest, git read-only, ...)",
+   "can_read_files": "the workspace copy",
+   "can_read_web": false,
+   "can_see_images": false,
+   "evidence": "registry via=tools; realadapters tool steps",
+   "good_for": [
+    "deterministic tool steps (step.tool)"
+   ],
+   "prompt_tips": "Not a model: give {tool, args|code|file, expect}.",
+   "known_failures": [
+    "tool steps whose files exist only on the host fail in the sandbox"
+   ],
+   "stage_runs": {
+    "ok": 56,
+    "failed": 24
+   }
+  },
+  "pull-agent": {
+   "can_run_code": "depends on the agent (it works in its own environment, not visible to the agency)",
+   "can_read_files": "what it is sent, plus tool_calls run by the agency in the workspace copy",
+   "can_read_web": "depends on the agent",
+   "can_see_images": "unknown",
+   "evidence": "registry via=pull (agency_next / agency_submit)",
+   "good_for": [
+    "research",
+    "code",
+    "reviews"
+   ],
+   "prompt_tips": "Pull-only: it asks for work; it cannot be launched. Answer format is the same JSON contract.",
+   "known_failures": [],
+   "stage_runs": {
+    "ok": 43,
+    "failed": 22
+   },
+   "prompt": {
+    "how_run": "You took this task by pull: your answer goes back with agency_submit(task_id, text). You work in your OWN environment: commands you run there do not touch the project. The project is a copy on the broker's computer that you see only through this prompt and through tool_calls the agency runs for you (if the format offers them). Do not say you ran or checked something you did not.",
+    "passes": "pull (agency_next / agency_submit; task prompt stored whole)",
+    "json_mode": "none (the submitted text is parsed tolerantly)",
+    "step": "Give every changed file COMPLETE (never '...', 'rest unchanged' or a diff); for a text job give the whole result in \"answer\". If you truly cannot do it, reply with no files and notes that say plainly why you cannot (that is not counted against you).",
+    "plan": "Each objective is all its agent sees besides the goal: make it complete and self-contained (files, the exact change or result, how it is checked).",
+    "review": "Approve only what you could see and verify. Every reason must name the file, the line or part, what is wrong and what to change: your reasons are passed word for word to the agent that fixes the work.",
+    "length": "As long as the task needs. Submit only the JSON object as the text."
+   }
+  },
+  "comfy-image": {
+   "enabled_by_default": false,
+   "note": "not driven by the agency yet"
+  },
+  "comfy-video": {
+   "enabled_by_default": false,
+   "note": "not driven by the agency yet"
+  },
+  "comfy-speech": {
+   "enabled_by_default": false,
+   "note": "not driven by the agency yet"
+  },
+  "comfy-music": {
+   "enabled_by_default": false,
+   "note": "not driven by the agency yet"
+  },
+  "visioncore-faces": {
+   "enabled_by_default": false,
+   "note": "not driven by the agency yet"
+  }
+ }
+}
