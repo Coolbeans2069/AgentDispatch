@@ -36,14 +36,14 @@ def match_score(description, text):
     return len(d & _stems(text)) / max(3.0, len(d) * 0.6) if d else 0.0
 
 
-def find_existing(box, description, threshold=0.6):
+def find_existing(box, description, min_score=0.6):
     """-> the best matching tool (installed, installable or custom) for a description, or None"""
     best, score = None, 0.0
     for t in box.reg.listing():
         s = max(match_score(description, t["name"] + " " + t["desc"]), similarity(description, t["name"] + " " + t["desc"]))
         if s > score:
             best, score = t, s
-    return dict(best, score=round(score, 2)) if best and score >= threshold else None
+    return dict(best, score=round(score, 2)) if best and score >= min_score else None
 
 
 def need_tool(box, jobs, gov, name, description, examples=None, actor="agent", build_dir=None):

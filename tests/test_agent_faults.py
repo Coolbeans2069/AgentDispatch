@@ -63,7 +63,7 @@ def test_a_busy_gpu_does_not_keep_a_silent_run_alive():
     import subprocess
     from agentdispatch.agency import vram
     real = vram.gpu_busy
-    vram.gpu_busy = lambda threshold=10: True
+    vram.gpu_busy = lambda min_pct=10: True
 
     class P:
         returncode = None

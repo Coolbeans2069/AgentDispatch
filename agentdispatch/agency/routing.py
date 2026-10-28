@@ -2,7 +2,7 @@
 A ladder lists the rungs of an agent: {model, effort, skill 0..1, weight}. `weight` is the relative token cost of a call at that rung, `skill` how hard a task it is trusted with. A task has a needed
 skill (its difficulty, nudged up by its kind and by earlier failures); the router takes the rung that is good enough and has the lowest score = weight x scarcity, where scarcity grows as the model's
 own quota (engine room per-model usage) or the agent's plan window fills up. A reading that is stale counts as fuller than it says. Everything is in <data>/routing.json (merged over DEFAULTS),
-so the ladders, weights and thresholds are tuned without code."""
+so the ladders, weights and cut-offs are tuned without code."""
 import copy, json, os, time
 
 from .modelbook import ModelBook

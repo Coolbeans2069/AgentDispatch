@@ -32,12 +32,12 @@ def nvidia_smi():
         return []
 
 
-def gpu_busy(threshold=10):
-    """is any GPU doing work right now (utilisation at or above `threshold` %)? A local model that is still computing is alive however long it takes."""
+def gpu_busy(min_pct=10):
+    """is any GPU doing work right now (utilisation at or above `min_pct` %)? A local model that is still computing is alive however long it takes."""
     try:
         out = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=10,
                              creationflags=0x08000000 if __import__("os").name == "nt" else 0).stdout
-        return any(int(x.strip()) >= threshold for x in out.split() if x.strip().isdigit())
+        return any(int(x.strip()) >= min_pct for x in out.split() if x.strip().isdigit())
     except Exception:
         return False
 
