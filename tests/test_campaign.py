@@ -33,11 +33,19 @@ def agent(mode, strengths, cost="cheap"):
     return dict(kind="cli", name=mode, strengths=strengths, cost=cost, concurrency=1, daily_cap=500, sandbox="copy", enabled=True, run=dict(argv=[sys.executable, FAKE, mode], stdin_prompt=True, timeout_s=60))
 
 
+def checks_run_without_docker(app):
+    """a test-only fallback: with no Docker sandbox image on this machine (a CI runner), acceptance checks run as a plain child process so the flow is still tested"""
+    from agentdispatch.nightshift import DEFAULTS as NS, docker_ready
+    if not docker_ready(NS["docker_image"]):
+        json.dump(dict(isolation="none"), open(os.path.join(app.data, "nightshift.json"), "w"))
+
+
 def rig(agents):
     """a real App on temp folders with the registry replaced by fake agents (+ the local-tools agent) and a dispatcher wired the way the broker wires it"""
     d, work = tempfile.mkdtemp(prefix="camp_"), tempfile.mkdtemp(prefix="campwork_")
     json.dump(dict(work_dir=work), open(os.path.join(d, "agency.json"), "w"))
     app = App(d, with_index=False)
+    checks_run_without_docker(app)
     ag = dict(agents)
     ag["local-tools"] = dict(DEFAULTS["local-tools"])
     app.registry.agents = {k: dict(v, id=k) for k, v in ag.items()}
