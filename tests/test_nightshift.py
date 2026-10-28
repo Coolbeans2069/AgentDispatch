@@ -260,7 +260,7 @@ def test_setup_status_and_the_board_add_check_tool():
     d = tempfile.mkdtemp(prefix="nsapp_")
     proj = mk_project()
     try:
-        app = App(d, with_index=False)
+        app = App(d)
         # out of the box: the three repos are allowed, a random folder is not; the tool says why
         sess = dict(profile="full", actor="claude-code")
         call = lambda n, **a: app.mcp.handle(dict(jsonrpc="2.0", id=1, method="tools/call", params=dict(name=n, arguments=a)), sess)["result"]["structuredContent"]
@@ -306,7 +306,7 @@ def test_secret_files_never_reach_a_prompt_and_confinement_is_not_cached():
     # the tool refuses secret-looking files up front
     d = tempfile.mkdtemp(prefix="nssec_")
     try:
-        app = App(d, with_index=False)
+        app = App(d)
         from agentdispatch.nightshift import write_config
         write_config(d, allowed_roots=[os.path.dirname(proj).replace("\\", "/")])
         sess = dict(profile="full", actor="agent")

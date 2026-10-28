@@ -74,11 +74,10 @@ def test_owner_role_and_keepalive_safety():
         port = srv.server_address[1]
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         agent, owner = new_token(d, "pull-agent"), new_token(d, "dev", "owner")
-        # an agent token cannot approve a tool or reload the index; the owner token can
-        assert call(port, "POST", "/api/approve", {"tool": "delete_everything"}, agent)[0] == 403
-        assert call(port, "POST", "/api/index/reload", {}, agent)[0] == 403
-        assert call(port, "POST", "/api/approve", {"tool": "delete_everything", "actor": "pull-agent", "minutes": 5}, owner)[0] == 200
-        assert app.index.approved("delete_everything", "pull-agent") and not app.index.approved("delete_everything", "other-bot")
+        # an agent token cannot move a job that waits for a person or allow a project folder; the owner token gets past the role check
+        assert call(port, "POST", "/api/jobs/cancel", {"job_id": "J-404"}, agent)[0] == 403
+        assert call(port, "POST", "/api/agency/allow_root", {"root": d}, agent)[0] == 403
+        assert call(port, "POST", "/api/jobs/cancel", {"job_id": "J-404"}, owner)[0] != 403
         # a rejected POST with a body must not poison the next request on the same keep-alive connection
         c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
         c.request("POST", "/mcp", json.dumps({"jsonrpc": "2.0", "id": 1, "method": "ping"}), {"Content-Type": "application/json"})

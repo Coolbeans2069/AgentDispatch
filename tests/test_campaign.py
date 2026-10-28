@@ -44,7 +44,7 @@ def rig(agents):
     """a real App on temp folders with the registry replaced by fake agents (+ the local-tools agent) and a dispatcher wired the way the broker wires it"""
     d, work = tempfile.mkdtemp(prefix="camp_"), tempfile.mkdtemp(prefix="campwork_")
     json.dump(dict(work_dir=work), open(os.path.join(d, "agency.json"), "w"))
-    app = App(d, with_index=False)
+    app = App(d)
     checks_run_without_docker(app)
     ag = dict(agents)
     ag["local-tools"] = dict(DEFAULTS["local-tools"])
@@ -938,7 +938,7 @@ def test_pages_endpoints_and_mcp_tools_with_the_right_owner_rules():
     d, work = tempfile.mkdtemp(prefix="campweb_"), tempfile.mkdtemp(prefix="campwork_")
     json.dump(dict(work_dir=work), open(os.path.join(d, "agency.json"), "w"))
     try:
-        app = App(d, with_index=False)
+        app = App(d)
         srv = Server(("127.0.0.1", 0), make_handler(app))
         port = srv.server_address[1]
         threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -1011,7 +1011,7 @@ def test_intake_end_to_end_chat_uploads_voice_analysis_and_submit():
     proj = tempfile.mkdtemp(prefix="intkproj_")
     open(os.path.join(proj, "acceptance.py"), "w").write("print('ok')\n")
     try:
-        app = App(d, with_index=False)
+        app = App(d)
         srv = Server(("127.0.0.1", 0), make_handler(app))
         port = srv.server_address[1]
         threading.Thread(target=srv.serve_forever, daemon=True).start()

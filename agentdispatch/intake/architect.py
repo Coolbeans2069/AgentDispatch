@@ -1,5 +1,5 @@
 """the ARCHITECT: a strong model (Claude, Codex, Gemini or Grok through their own CLIs; the local model only as a last resort) that interviews the person, studies whatever must be understood first
-(reverse-engineering existing software with the REA tools), works out the design including the hooks and tools that do not exist yet, writes a plan of jobs with acceptance checks, and has a DIFFERENT
+(existing software, documents and data formats, with the local tools), works out the design including the hooks and tools that do not exist yet, writes a plan of jobs with acceptance checks, and has a DIFFERENT
 model attack it before anything is built. The expensive thinking happens once, here, with every local tool free to use; the deterministic gate in blueprint.validate decides whether the result is ready.
 Each pass runs in a background thread; the page watches the session."""
 import json, os, re, threading, time
@@ -80,12 +80,8 @@ class Architect:
         agents = PROF.text(reg, getattr(self.app, "availability", None), getattr(self.app, "jobs", None), getattr(self.app, "data", None))
         cat = self.app.catalog
         models = ", ".join("%s: %s" % (f, n) for f, n in cat.counts().items() if n)
-        rea = ""
-        ix = getattr(self.app, "index", None)
-        if ix and ix.indexes:
-            rea = " REVERSE ENGINEERING (REA, Ghidra based; use rea_search then rea_describe then rea_call): backends %s." % ", ".join(ix.indexes)
-        return ("THIS COMPUTER CAN DO, FREE: tools - %s. %s\nModels on disk by function - %s.%s Tools that do NOT exist can be built by an agent (put them in design.tools_needed)."
-                % (tools, agents, models, rea))
+        return ("THIS COMPUTER CAN DO, FREE: tools - %s. %s\nModels on disk by function - %s. Tools that do NOT exist can be built by an agent (put them in design.tools_needed)."
+                % (tools, agents, models))
 
     def hints(self, text):
         try:
@@ -101,22 +97,11 @@ class Architect:
 
     # ------------------------------------------------------------ tools the thinker may call mid-thought
     TOOLS_TEXT = ('LOCAL TOOLS (free): to use them reply ONLY with {"tool_calls": [{"tool": "calc", "code": "<python that prints>"}, {"tool": "lean", "code": "<lean>"}, {"tool": "git", "args": ["log", "-3"]}, '
-                  '{"tool": "rea_search", "query": "read a file format"}, {"tool": "rea_describe", "names": ["<tool name>"]}, {"tool": "rea_call", "name": "<tool name>", "arguments": {}}, '
                   '{"tool": "playbook_search", "query": "similar past work"}, {"tool": "local_llm", "prompt": "draft / summarise / extract this (free local model: check its answer)"}, {"tool": "freecad", "args": ["<script.py in a project folder>"]}, {"tool": "tool_list"}]} (at most 4 per round, at most %d rounds); you are sent the outputs, then give your final JSON.' % MAX_ROUNDS)
 
     def run_tool(self, c, sid):
         t = c.get("tool", "")
         try:
-            if t in ("rea_search", "rea_describe", "rea_call"):
-                ix = getattr(self.app, "index", None)
-                if not ix or not ix.indexes:
-                    return dict(ok=False, error="the reverse-engineering tool index is not available")
-                s = dict(actor="architect")
-                if t == "rea_search":
-                    return ix.tool_search(dict(query=str(c.get("query", ""))[:200], backend="rea", limit=8), s)
-                if t == "rea_describe":
-                    return ix.tool_describe(dict(names=[str(x) for x in (c.get("names") or [])][:4]), s)
-                return ix.tool_call(dict(name=str(c.get("name", "")), arguments=c.get("arguments") or {}, timeout_s=int(c.get("timeout_s", 300))), s)
             if t == "local_llm":
                 r = self.app.localtools.run("local_llm", code=str(c.get("prompt") or c.get("code") or "")[:8000], caller="architect", job=sid)
                 self.app.usage.record("local", "local_llm", 0, len(str(c.get("prompt") or "")), len(r.get("stdout") or ""), sid)
@@ -215,13 +200,13 @@ class Architect:
     def p_interview(self, s):
         return "\n".join([self.core(), "PASS=interview", "Talk to the person like a demanding senior engineer and product analyst. Extract every requirement, number and constraint they gave; record assumptions you must make; ask at most THREE "
                           "questions, only those whose answer would change the design, each with the default you will assume; mark questions the person has now answered (answered: their answer); say plainly if part of "
-                          "it looks infeasible and offer alternatives; list any existing software that should be studied (reverse engineered) before designing.", self.context(s),
+                          "it looks infeasible and offer alternatives; list any existing software, documents or data formats that should be studied before designing.", self.context(s),
                           'Reply: {"reply": "<2-4 friendly sentences for the person: what you understood, what you assume, your questions>", "blueprint": {%s}} - include only the sections you change; sections you '
                           "include replace the old ones, so keep what is still true." % SECTIONS])
 
     def p_study(self, s):
         return "\n".join([self.core(), "PASS=study", "Before designing, understand what must be understood. For every item in reference_systems and every attached file that is software, firmware or a data format: study it with the "
-                          "REA reverse-engineering tools (rea_search, rea_describe, rea_call) and the local tools, and record concrete findings (formats, protocols, algorithms, constants, behaviours, "
+                          "local tools, and record concrete findings (formats, protocols, algorithms, constants, behaviours, "
                           "limits). Inspect what you must; never guess what a tool could tell you. If nothing needs studying say so.", self.TOOLS_TEXT, self.context(s),
                           'Reply: {"findings": [{"about": "<what>", "text": "<what you learned, concrete>"}], "blueprint": {"reference_systems": [...], "assumptions": [...], "risks": [...]}}'])
 
@@ -424,9 +409,9 @@ class Architect:
                 break
             s = self.intake.get(sid)
             if phase == "study" and not s["blueprint"].get("reference_systems") and not any(f["kind"] in ("text", "other") for f in s["files"]):
-                self.log(sid, "study", "Nothing needs reverse engineering or studying first.")
+                self.log(sid, "study", "Nothing needs studying first.")
                 continue
-            self.log(sid, phase, {"study": "Studying what has to be understood first (reverse engineering, references)...", "design": "Designing: components, hooks, the tools that must exist...", "plan": "Writing the plan of jobs, with acceptance checks and tests..."}[phase])
+            self.log(sid, phase, {"study": "Studying what has to be understood first (references, formats, documents)...", "design": "Designing: components, hooks, the tools that must exist...", "plan": "Writing the plan of jobs, with acceptance checks and tests..."}[phase])
             d, who = self.ask(sid, prompt_fn(s), "findings" if phase == "study" else "design" if phase == "design" else "plan", phase, rounds=rounds)
             if d is None:
                 self.log(sid, phase, "No model produced a usable %s. Try again in a minute." % phase)

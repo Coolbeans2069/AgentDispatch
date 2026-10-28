@@ -4,7 +4,7 @@ Status: design document. Stage 0 (jobs, registry, dispatcher, gate with fake age
 
 ## 0. Purpose and scope
 A cross-platform AI agency: a task goes in once; the agency splits it, picks the right agent for each step (Claude, Codex, Gemini CLI, Grok CLI, pull agents, local Ollama), within what each agent has left, reviews the result with a different agent plus objective checks, and either delivers it, merges it (safe repos only) or puts it in front of the owner.
-It extends what exists - the broker (notice board, attempt ledger, router, night shift, tool index) and the engine room (agent detection, limits, GPU/CPU/RAM headroom) - and adds no third service.
+It extends what exists - the broker (notice board, attempt ledger, router, night shift) and the engine room (agent detection, limits, GPU/CPU/RAM headroom) - and adds no third service.
 Job kinds, in build order: **code** (change a repo), **production** (a MediaStudio render / repair), **general** (research, writing, automation).
 
 Non-goals for 0.4.0: a web UI beyond the engine room panel; running agents on other machines; changing MediaStudio's pipeline logic.
@@ -60,5 +60,4 @@ Fake adapters (deterministic): selection, escalation, cooldown, caps, state mach
 - Claude / pull agent limits are unknown: cooldown learning is the only signal.
 - Windows process handling: kill the whole tree; never leave a CLI orphaned.
 - The agency must not starve production: it checks engine room headroom before local-model runs.
-- The lean tool index can miss: REA's index missed one query in the hard set, so an agent must be allowed to fall back to `tool_search` with different wording and to report what it could not find.
 - Hardware incidents: production resumes only on the owner's word, and the agency inherits that switch (`agency_off`).

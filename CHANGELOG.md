@@ -2,6 +2,20 @@
 
 All notable changes to this project are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-28
+
+### Added
+- `examples/mcp-b1-demo/`: an offline demo MCP server over a synthetic dataset shaped like SAP Business One Service Layer objects (unofficial; not affiliated with SAP SE; it does not connect to SAP software). It has nine read tools, `audit_tail`, and one approval-gated write (a draft purchase order: preview, a single-use 10-minute token bound to the payload, then an explicit approve), an append-only audit log, a `B1DEMO_READ_ONLY=1` switch and standard-library core tests.
+- CI now also runs the Engine Room integration test and the demo's tests (the MCP end-to-end test in the with-extras jobs).
+
+### Changed
+- The README, package description and keywords now describe AgentDispatch plainly as a local AI agent broker for small businesses.
+- `tests/integration_engineroom.py` starts the Engine Room in this repository instead of looking for a separate checkout, so it really runs.
+- The `lite` MCP profile is now the 4 board tools.
+
+### Removed
+- The lean tool index (`agentdispatch/toolindex/`: catalog compaction, hints, search and the `tool_search` / `tool_describe` / `tool_call` / `tool_result` meta-tools), its backends, the `approve` and `index` CLI commands, the matching web endpoints, and its tests and golden files. It is kept on the `archive/ghidra-index` branch.
+
 ## [0.1.0] - 2026-10-28
 
 First public release.

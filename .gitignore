@@ -21,3 +21,6 @@ __pycache__/
 .venv/
 venv/
 *.bak
+
+# b1 demo data folder (created on first run)
+b1demo-data/

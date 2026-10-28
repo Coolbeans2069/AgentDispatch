@@ -2,20 +2,18 @@
 
 [![tests](https://github.com/Coolbeans2069/AgentDispatch/actions/workflows/ci.yml/badge.svg)](https://github.com/Coolbeans2069/AgentDispatch/actions/workflows/ci.yml)
 
-**A local broker that lets many AI coding agents work as one team.** Claude Code, Codex CLI, Gemini CLI, Grok CLI, local Ollama models and any "pull" agent share one notice board, one lean tool index and one job queue. It is **local-first**: work goes to models running on your own machine (Ollama) first, and to cloud models only through API keys you bring yourself. A task goes in once; AgentDispatch plans it, hands each step to the cheapest capable agent that is available, has a *different* agent review the result alongside objective checks, and only then delivers it, all on your own machine.
+**A local AI agent broker for small businesses: an MCP server, a job queue, an independent review gate and local-first (Ollama) model routing, with audit trails and approvals.** Claude Code, Codex CLI, Gemini CLI, Grok CLI, local Ollama models and any "pull" agent share one notice board and one job queue. It is **local-first**: work goes to models running on your own machine (Ollama) first, and to cloud models only through API keys you bring yourself. A task goes in once; AgentDispatch plans it, hands each step to the cheapest capable agent that is available, has a *different* agent review the result alongside objective checks, and only then delivers it, all on your own machine.
 
 ![The agency page: jobs, their steps and the agents that are available](docs/screenshots/agency.png)
 
 ## Why
 Running several agents side by side wastes effort in predictable ways:
 - **They repeat each other's failures.** Agent B retries the exact step agent A already tried and failed.
-- **Tool catalogs eat the context window.** A 170-tool MCP catalog is about 490,000 tokens of schema.
 - **Local models sit idle.** Everything goes to one expensive cloud model, while a local model could do the bulk of the work.
 - **Nobody checks the work.** The agent that wrote a change is the one saying it is done.
 
 AgentDispatch fixes each of these:
 - An **append-only notice board with an attempt ledger** stops repeated failures.
-- A **compacted, searchable tool index** costs about 500 tokens to browse.
 - A **local-first router** sends work to a local Ollama model when one fits, and to your own cloud API keys only when it must.
 - A **review gate** requires an independent reviewer plus real checks before anything counts as done.
 
@@ -24,18 +22,13 @@ Python 3.11+. The broker itself uses the **standard library only** and needs no 
 > **Vendor terms.** AgentDispatch launches agent CLIs and calls model APIs with the credentials *you* configure. Check each vendor's terms of service for automated or multi-agent use before you connect an account, and prefer API keys and local models for unattended work.
 
 ## Features
-- **MCP server (stdio and HTTP).** Every agent connects the same way. The `lite` profile (8 tools) suits small local models; the `full` profile exposes everything.
+- **MCP server (stdio and HTTP).** Every agent connects the same way. The `lite` profile (the 4 board tools) suits small local models; the `full` profile exposes everything.
 - **SQLite notice board:**
   - an event log with threads, attachments and claims with leases;
   - an **attempt ledger** that refuses a step that has already failed unless the caller explains why the earlier try was wrong;
   - automatic escalation after 3 failures;
   - secret redaction on every post.
 - **Job / task model.** Jobs are split into steps with `needs` tags (`code`, `review`, `long-context`, `vision`, ...), budgets, priorities and a state machine (`queued -> planning -> running -> reviewing -> ready | merged | delivered | failed`).
-- **Tool index:**
-  - deterministic compaction of any MCP tool catalog;
-  - optional local-model hints, validated against the real catalog;
-  - BM25-style search;
-  - meta-tools `tool_search` / `tool_describe` / `tool_call` / `tool_result`, with large results returned by reference.
 - **OpenAI-compatible router.** `POST /v1/chat/completions` and `GET /v1/models`, with streaming and tool calling. The `auto` model goes local first, then free cloud tiers, then a bigger local model.
 - **Planner / reviewer loop.** A strong agent plans and the broker validates the plan. Steps run in throw-away copies, and a different agent reviews each diff.
 - **Night shift.** Between 00:00 and 06:00 a local model works the issues marked for it, inside a network-less Docker sandbox. Passing patches are attached to the issue, never applied.
@@ -69,7 +62,6 @@ flowchart LR
 
     subgraph Broker["AgentDispatch broker (127.0.0.1)"]
         MCP[MCP server<br/>stdio + HTTP]
-        TI[Tool index<br/>search / describe / call]
         RT[OpenAI-compatible router<br/>/v1/chat/completions]
         DSP[Dispatcher]
         PL[Planner]
@@ -91,7 +83,6 @@ flowchart LR
     PA -->|agency_next / agency_submit| MCP
     OL <-->|chat| RT
     MCP --> DB
-    MCP --> TI
     DSP -->|launch headless CLI| Agents
     DSP --> PL --> DSP
     DSP --> RV --> DSP
@@ -176,7 +167,7 @@ python -m engineroom --no-window
 
 # 4. create tokens (HTTP clients send "Authorization: Bearer <token>")
 python -m agentdispatch --data ./data token my-agent
-python -m agentdispatch --data ./data token me --owner    # owner token for approve / merge buttons
+python -m agentdispatch --data ./data token me --owner    # owner token for the accept / reject buttons
 ```
 Then open:
 - <http://127.0.0.1:8870/board> for the notice board;
@@ -230,7 +221,6 @@ agentdispatch/
   orchestrator.py              triage of open issues, duplicate linking, escalation ladder
   nightshift.py                overnight sandboxed fix loop
   paths.py                     host paths from environment variables
-  toolindex/                   catalog compaction, hints, search, meta-tools
   agency/                      jobs, registry, dispatcher, planner/reviewer adapters, review gate,
                                apply flow, watchdog, conductor, brain + agency pages
   campaign/                    gates, governance and playbooks for multi-job campaigns
@@ -244,16 +234,18 @@ engineroom/
   ui.html                      the dashboard page
 tools/devtrack.py              change tracking / hash manifests between components
 tests/                         unit, integration and opt-in live tests
+examples/mcp-b1-demo/          offline demo MCP server over synthetic ERP-style data (approved writes, audit log)
 docs/AGENCY_SPEC.md            design of the agency
 ```
 
 ## Tests
 ```bash
-python tests/run_all.py            # 29 test files, no network; passes with the standard library only
+python tests/run_all.py            # no network; passes with the standard library only
 pip install -r requirements-dev.txt && python tests/run_all.py   # also runs the symbolic-maths (sympy) paths
-python tests/run_all.py --e2e      # adds the opt-in end-to-end test (skips when its tools are absent)
+python tests/integration_engineroom.py                           # starts the in-repo Engine Room and checks the broker can use it
+python examples/mcp-b1-demo/tests/run_tests.py                   # the business demo (core tests need only the standard library)
 ```
-Without sympy, the calculator tests use a standard-library version of the same check and expect "install it" where they would otherwise expect "already installed". The live tests (`tests/live_*.py`, `tests/integration_engineroom.py`) skip themselves when a key or service is missing. GitHub Actions runs the suite on Python 3.11 and 3.12, with and without the extras (`.github/workflows/ci.yml`).
+Without sympy, the calculator tests use a standard-library version of the same check and expect "install it" where they would otherwise expect "already installed". The live tests (`tests/live_*.py`) skip themselves when a key or service is missing. GitHub Actions runs the suite, the Engine Room integration test and the business demo's tests on Python 3.11 and 3.12, with and without the extras (`.github/workflows/ci.yml`); the demo's MCP end-to-end test runs in the with-extras jobs.
 
 ## Dependencies
 The broker, the MCP server, the router, the board and the agency use the **Python standard library only**. Everything below is optional, imported only when the feature is used, and reported as "not installed" otherwise.
@@ -277,7 +269,11 @@ The broker, the MCP server, the router, the board and the agency use the **Pytho
 - All keys and host paths come from environment variables. The data folder is git-ignored.
 
 ## Use it for business integrations
-The same pieces (an MCP server, a lean tool index, an approval gate and an audit trail) are what a small business needs to let an AI assistant work with its own systems safely: read tools first, every write behind an explicit approval, every call logged. A separate demo of that pattern, an MCP connector over a **fake** ERP-style dataset (stock, orders, invoices) with one approved write, is planned; it will be linked here when it is published.
+The same pieces (an MCP server, an approval gate and an audit trail) are what a small business needs to let an AI assistant work with its own systems safely: read tools first, every write behind an explicit approval, every call logged.
+
+[examples/mcp-b1-demo/](examples/mcp-b1-demo/) shows that pattern end to end: an offline MCP server over a **synthetic** dataset shaped like SAP Business One Service Layer objects (business partners, items, stock per warehouse, sales orders, invoices). It has nine read tools and one write, a draft purchase order that needs a preview, a single-use approval token and an explicit approve, and every call goes to an append-only audit log.
+
+> Unofficial demo. Not affiliated with, endorsed by or sponsored by SAP SE. Uses synthetic data shaped like SAP Business One Service Layer objects; it does not connect to SAP software.
 
 For an example of how a job is scoped before any agent runs (requirements, limits, fixtures and an acceptance rule), see [docs/trials/csv_report_service.md](docs/trials/csv_report_service.md).
 

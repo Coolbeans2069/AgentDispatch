@@ -1,5 +1,5 @@
 """the BLUEPRINT: everything the architect works out before any job exists - what is wanted and why, whether it is feasible, requirements with priorities, assumptions, open questions, risks, what to
-study (reverse-engineer) first, the design (components, interfaces, hooks, tools that must exist), and a plan of jobs with dependencies, acceptance checks and a trace from every requirement to the jobs
+study first, the design (components, interfaces, hooks, tools that must exist), and a plan of jobs with dependencies, acceptance checks and a trace from every requirement to the jobs
 that deliver it. `normalize` makes any model output safe to store; `validate` is the deterministic readiness gate: a plan with an uncovered requirement, a job nobody could verify, a missing tool
 nobody is building, an unanswered question without a default or a dependency loop is NOT ready, however good it reads."""
 import re, shlex

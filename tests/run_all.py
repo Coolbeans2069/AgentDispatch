@@ -1,10 +1,8 @@
-"""run every test file; exit 1 if any fails (e2e_rea.py is run only with --e2e because it starts REA and Ghidra)"""
+"""run every test file; exit 1 if any fails"""
 import glob, os, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 files = sorted(glob.glob(os.path.join(ROOT, "tests", "test_*.py")))
-if "--e2e" in sys.argv:
-    files.append(os.path.join(ROOT, "tests", "e2e_rea.py"))
 bad = 0
 for f in files:
     r = subprocess.run([sys.executable, f], cwd=ROOT, capture_output=True, text=True, timeout=900)

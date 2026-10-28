@@ -9,7 +9,7 @@ import fnmatch, json, os, re, threading, time
 
 DEFAULT = dict(
     mcp_tools=["board_search", "board_read", "board_read_doc", "board_post", "board_reply", "board_attach", "board_attempt", "board_result", "board_suggest", "board_trail", "board_add_check", "board_claim",
-               "playbook_*", "tool_list", "tool_run", "tool_need", "tool_install", "tool_search", "tool_describe", "tool_call", "tool_result",
+               "playbook_*", "tool_list", "tool_run", "tool_need", "tool_install",
                "job_status", "job_list", "job_evidence", "campaign_state", "model_list", "agency_agents", "capability_*"],
     shell=["python:*", "python3:*", "pytest:*", "ruff:*", "mypy:*", "git:*", "ls:*", "cat:*", "grep:*", "find:*", "sed:*", "head:*", "tail:*", "wc:*", "sort:*", "diff:*", "mkdir:*", "cp:*", "mv:*", "rm:*", "node:*"],
     context=["digest", "job", "playbooks", "tools", "schemas"],

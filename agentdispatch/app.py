@@ -1,4 +1,4 @@
-"""wiring: one Board + one McpServer (board tools, later the tool-index meta tools) + the audit log, shared by the stdio and HTTP front ends"""
+"""wiring: one Board + one McpServer (board, agency, model, campaign and capability tools) + the audit log, shared by the stdio and HTTP front ends"""
 import json, os, posixpath, threading, time
 
 from . import __version__
@@ -59,7 +59,7 @@ class App:
                                     checker=checker, hooks=self.campaign.governor, apply_fn=make_apply(self.data, cfg["work_dir"], runner.run))
         return self._disp
 
-    def __init__(self, data=None, with_index=True):
+    def __init__(self, data=None):
         self.data = os.path.abspath(data or DEFAULT_DATA)
         os.makedirs(self.data, exist_ok=True)
         self.board = Board(self.data)
@@ -109,10 +109,3 @@ class App:
             self.mcp.add(t)
         from .router import Router
         self.router = Router(self)
-        self.index = None
-        if with_index:
-            try:
-                from .toolindex.service import attach
-                self.index = attach(self)
-            except ImportError:
-                self.index = None

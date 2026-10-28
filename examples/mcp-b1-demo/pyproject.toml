@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-b1-demo"
+version = "0.1.0"
+description = "Offline demo MCP server on synthetic ERP-style data with approval-gated writes and an audit log. Unofficial demo. Not affiliated with, endorsed by or sponsored by SAP SE. Uses synthetic data shaped like SAP Business One Service Layer objects; it does not connect to SAP software."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["mcp", "model-context-protocol", "erp", "ai-agents", "demo"]
+# the core (data, tools, approvals, audit, CLI) is standard library only; the MCP server needs the official SDK
+dependencies = []
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+
+[project.scripts]
+b1demo = "b1demo.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["b1demo*"]

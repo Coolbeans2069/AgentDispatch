@@ -113,7 +113,7 @@ def test_obvious_duplicates_are_linked_even_if_the_model_misses_them():
     b, c, d = mk()
     a = b.post("grok", "issue", "ComfyUI window 8189 hangs with a prompt running", "GPU idle 0% for 15 minutes while the queue shows a running prompt")["id"]
     z = b.post("claude", "issue", "ComfyUI 8189 window hangs: prompt running", "GPU idle 0% for fifteen minutes; the queue shows a running prompt")["id"]
-    other = b.post("codex", "issue", "Need a tool to diff Ghidra projects", "nothing compares analysis databases")["id"]
+    other = b.post("codex", "issue", "Need a tool to diff two spreadsheet exports", "nothing compares the two price lists")["id"]
     llm = fake({x: dict(category="bug", difficulty=3, tier="mid", duplicate_of=None, next_step="look", needs_tool=None) for x in (a, z, other)})
     r = Orchestrator(b, llm, now=c).sweep()
     assert r["results"][z]["duplicate_of"] == a and r["results"][a]["duplicate_of"] is None and r["results"][other]["duplicate_of"] is None

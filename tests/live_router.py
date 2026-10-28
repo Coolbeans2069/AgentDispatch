@@ -13,7 +13,7 @@ from agentdispatch.web import Server, make_handler, new_token
 d = tempfile.mkdtemp(prefix="liver_")
 TOOLS = [dict(type="function", function=dict(name="get_weather", description="Get the current weather for a city", parameters=dict(type="object", properties=dict(city=dict(type="string")), required=["city"])))]
 try:
-    app = App(d, with_index=False)
+    app = App(d)
     app.router.cfg["check_vram"] = False
     srv = Server(("127.0.0.1", 0), make_handler(app))
     port = srv.server_address[1]

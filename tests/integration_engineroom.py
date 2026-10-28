@@ -1,16 +1,15 @@
-"""integration between the two components: agentdispatch reports its Ollama calls and asks for Gemini budgets through engineroom's local API.
-Starts the engine room on a spare port with a scratch data folder (needs ../engineroom next to this repo)."""
+"""integration between the two components: agentdispatch asks the engine room for Gemini budgets and reports its Ollama calls through engineroom's local API.
+Starts the engine room (engineroom/ in this repo) on a spare port with a scratch data folder. Not part of run_all.py because it opens a local port; run it directly."""
 import json, os, subprocess, sys, tempfile, time, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ER = os.path.join(os.path.dirname(ROOT), "engineroom")
-if not os.path.isfile(os.path.join(ER, "engineroom_app.py")):
-    print("SKIP: engineroom is not next to this repo")
+if not os.path.isfile(os.path.join(ROOT, "engineroom", "app.py")):
+    print("SKIP: engineroom is not in this checkout")
     sys.exit(0)
 PORT = 8897
 scratch = tempfile.mkdtemp(prefix="er_int_")
-env = dict(os.environ, ENGINEROOM_PORT=str(PORT), MEDIASTUDIO_STUDIO_DIR=scratch, AD_LIMITS_NO_LIVE="1", MEDIASTUDIO_LIMITS_FILE=os.path.join(scratch, "limits.json"), ENGINEROOM_URL="http://127.0.0.1:%d" % PORT)
-p = subprocess.Popen([sys.executable, os.path.join(ER, "engineroom_app.py"), "--no-window"], cwd=ER, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+env = dict(os.environ, ENGINEROOM_PORT=str(PORT), ENGINEROOM_DATA=scratch, AD_LIMITS_NO_LIVE="1", ENGINEROOM_LIMITS_FILE=os.path.join(scratch, "limits.json"), ENGINEROOM_URL="http://127.0.0.1:%d" % PORT)
+p = subprocess.Popen([sys.executable, "-m", "engineroom", "--no-window"], cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 base = "http://127.0.0.1:%d" % PORT
 
 
@@ -37,15 +36,14 @@ try:
         raise AssertionError("should not call Gemini without a key")
     except LLMUnavailable:
         pass
-    # the tool-index builder reports its Ollama calls to the engine room
-    from agentdispatch.toolindex import build
-    build.ENGINE_ROOM = base
-    build.log_to_engine_room("local-qwen3-4b", dict(prompt_eval_count=120, eval_count=300, eval_duration=6_000_000_000))
+    # a broker-side Ollama call reported to the engine room shows on its OLLAMA dial and in its call log
+    req = urllib.request.Request(base + "/llm", data=json.dumps(dict(backend="ollama", who="agentdispatch", model="local-qwen3-4b", prompt_tokens=120, gen_tokens=300, ms=6000)).encode(), method="POST")
+    urllib.request.urlopen(req, timeout=10).read()
     time.sleep(2.5)
     o = get("/now")["ollama"]
     assert o["calls_today"] == 1 and o["gen_today"] == 300 and 49 <= o["now_tok_s"] <= 51, o
     rows = open(os.path.join(scratch, "metrics", "ollama_calls.csv"), encoding="utf-8").read().splitlines()
-    assert "agentdispatch-index" in rows[1] and "local-qwen3-4b" in rows[1]
+    assert "agentdispatch" in rows[1] and "local-qwen3-4b" in rows[1]
     print("INTEGRATION OK: budget, usage reporting and the Ollama log work across the two components")
 finally:
     p.kill()

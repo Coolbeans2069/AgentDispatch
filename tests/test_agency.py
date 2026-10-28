@@ -485,7 +485,7 @@ def test_code_job_targets_are_limited_and_reviews_count_as_runs():
     from agentdispatch.app import App
     d = tempfile.mkdtemp(prefix="agency_app_")
     try:
-        app = App(d, with_index=False)
+        app = App(d)
         for bad in ("C:/Windows", "D:/", "D:/repos/app/../Users", "/etc"):
             try:
                 app.jobs.create("dev", "t", "g", "code", bad, dict(check="python -m pytest -q"))
@@ -552,7 +552,7 @@ def test_brain_feed_cards_pulses_and_strand():
     d = tempfile.mkdtemp(prefix="brain_")
     try:
         json.dump(dict(work_dir=os.path.join(d, "work")), open(os.path.join(d, "agency.json"), "w"))
-        app = App(d, with_index=False)
+        app = App(d)
         app.availability.which = lambda b: "x"
         app.availability.fetch = lambda url: dict(gpus=[dict(util=3.0)], ram=10.0, ram_total_gb=240, limits={}, agents=[
             dict(id="claude", n=3, cpu=22.0, busy=True, running=True), dict(id="codex", n=1, cpu=0.5, busy=False, running=True), dict(id="pullagent", n=9, cpu=1.0, busy=False, running=True)])

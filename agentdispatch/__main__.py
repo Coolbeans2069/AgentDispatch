@@ -35,7 +35,7 @@ def _agent_selftest(app, env, wait=False):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="agentdispatch", description="AgentDispatch: notice board + lean tool index, served over MCP (stdio or HTTP)")
+    ap = argparse.ArgumentParser(prog="agentdispatch", description="AgentDispatch: notice board, job queue and review gate for AI agents, served over MCP (stdio or HTTP)")
     ap.add_argument("--data", default=DEFAULT_DATA)
     sp = ap.add_subparsers(dest="cmd", required=True)
     s = sp.add_parser("stdio", help="MCP over stdin/stdout (what Claude Code / Codex / Grok launch)")
@@ -45,18 +45,7 @@ def main(argv=None):
     s.add_argument("--port", type=int, default=8870)
     s = sp.add_parser("token", help="create a bearer token for an HTTP client")
     s.add_argument("name")
-    s.add_argument("--owner", action="store_true", help="owner role: may approve risky tools and reload the index (give this only to people)")
-    s = sp.add_parser("approve", help="approve a risky catalog tool for a while (the owner, at the keyboard)")
-    s.add_argument("tool")
-    s.add_argument("--actor", default="*", help="only this agent (default: any)")
-    s.add_argument("--minutes", type=int, default=60)
-    s = sp.add_parser("index", help="build or inspect the lean tool index")
-    s.add_argument("action", choices=["build", "status"])
-    s.add_argument("--catalog", default=None, help="a tools/list JSON file (default: ask the registered REA backend)")
-    s.add_argument("--llm", default="auto", choices=["auto", "gemma", "ollama"], help="who writes the tool hints: auto = Gemma 4 (free Gemini tier) first, local Ollama as the fallback")
-    s.add_argument("--model", default=None, help="a specific model name for the chosen --llm (default: Gemma 4 26B/31B, or the best local model)")
-    s.add_argument("--no-llm", action="store_true", help="deterministic parts only")
-    s.add_argument("--fresh", action="store_true", help="ignore the existing index: ask the model about every tool again")
+    s.add_argument("--owner", action="store_true", help="owner role: may accept, reject and cancel jobs and allow project folders (give this only to people)")
     s = sp.add_parser("agency", help="the agency (Stage 0: plans and assigns, runs no real agent): status | submit | tick --dry | lock | verify")
     s.add_argument("action", choices=["status", "submit", "tick", "lock", "verify", "list", "run", "diff", "show", "unblock", "agents", "agent-add", "capabilities", "conductor"])
     s.add_argument("job", nargs="?", help="(diff, show, unblock) the job id; (agent-add) the new agent's id")
@@ -134,17 +123,12 @@ def main(argv=None):
         from .web import new_token
         print(new_token(a.data, a.name, "owner" if a.owner else "agent"))
         return 0
-    if a.cmd == "approve":
-        from .toolindex.service import IndexService
-        IndexService(App(a.data, with_index=False)).approve(a.tool, a.actor, a.minutes)
-        print("approved %s for %s for %d minutes" % (a.tool, a.actor, a.minutes))
-        return 0
     if a.cmd == "agency":
         from .agency import gate as AG
         from .agency.dispatcher import Dispatcher
         from .agency.adapters import Adapter
         from .web import agency_status, slim_job
-        app = App(a.data, with_index=False)
+        app = App(a.data)
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if a.action == "status":
             print(json.dumps(agency_status(app), indent=1))
@@ -341,7 +325,7 @@ def main(argv=None):
         return 0
     if a.cmd == "autonomy":
         from .intake import autonomy as AU, Intake
-        app = App(a.data, with_index=False)
+        app = App(a.data)
         if a.action == "on":
             print(json.dumps(AU.enable(app, a.root), indent=1))
         elif a.action == "off":
@@ -361,7 +345,7 @@ def main(argv=None):
             print(json.dumps(dict(config=app.usage.autonomy.load(), strong_today=app.usage.summary()["strong_calls_today"]), indent=1))
         return 0
     if a.cmd in ("tools", "campaign", "playbooks"):
-        app = App(a.data, with_index=False)
+        app = App(a.data)
         api = app.api
         show = lambda r: print(json.dumps(r, indent=1, default=str, ensure_ascii=False))
         if a.cmd == "tools":
@@ -477,7 +461,7 @@ def main(argv=None):
     if a.cmd == "nightshift":
         from .nightshift import NightShift, daemon, load_config, write_config, status
         from .orchestrator import ollama_llm
-        app = App(a.data, with_index=False)
+        app = App(a.data)
         if a.action == "setup":
             print(json.dumps(write_config(app.data, allowed_roots=[r.replace("\\", "/") for r in a.root], trusted_authors=a.trust, isolation=a.isolation), indent=1))
             return 0
@@ -493,7 +477,7 @@ def main(argv=None):
         return 0
     if a.cmd == "orchestrate":
         from .orchestrator import Orchestrator, gemini_llm, ollama_llm, openrouter_llm
-        app = App(a.data, with_index=False)
+        app = App(a.data)
         g, o = gemini_llm(a.gemini_model), ollama_llm(a.ollama_model)
         or_llm = openrouter_llm(a.openrouter_model, data_dir=app.data)
         primary = {"gemini": g, "openrouter": or_llm, "ollama": o}[a.llm]
@@ -507,9 +491,6 @@ def main(argv=None):
         for pid, rec in r["results"].items():
             print("  %s -> %s, difficulty %d, tier %s: %s" % (pid, rec["category"], rec["difficulty"], rec["tier"], rec["next_step"]))
         return 0
-    if a.cmd == "index":
-        from .toolindex.service import cli_index
-        return cli_index(App(a.data, with_index=False), a)
     return 1
 
 

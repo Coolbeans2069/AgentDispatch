@@ -97,7 +97,7 @@ def reset():
 def mk():
     fake, base = start_fake()
     d = tempfile.mkdtemp(prefix="router_")
-    app = App(d, with_index=False)
+    app = App(d)
     os.environ["GEMINI_API_KEY"] = "test-key-not-real"
     app.router = Router(app, dict(ollama_url=base, engine_room=base, gemini_url=base, check_vram=False))
     reset()
@@ -167,12 +167,12 @@ def test_explicit_models_images_json_and_long_prompts():
 
 def test_board_line_is_posted_and_stripped_and_failures_are_reported():
     app, fake, d = mk()
-    STATE["reply"] = "I could not finish.\nBOARD: Cannot parse the Ghidra output format"
+    STATE["reply"] = "I could not finish.\nBOARD: Cannot parse the supplier price list format"
     r = app.router.chat(dict(model="auto", **msg()), "pull-agent")
     assert "BOARD:" not in r["choices"][0]["message"]["content"] and r["choices"][0]["message"]["content"] == "I could not finish."
     pid = r["agentdispatch"]["board_posts"][0]["id"]
     t = app.board.trail(pid)["issue"]
-    assert t["title"] == "Cannot parse the Ghidra output format" and t["author"] == "pull-agent via router" and "router" in t["tags"]
+    assert t["title"] == "Cannot parse the supplier price list format" and t["author"] == "pull-agent via router" and "router" in t["tags"]
     r2 = app.router.chat(dict(model="auto", **msg()), "codex")                                 # the same problem again is linked, not posted twice
     assert r2["agentdispatch"]["board_posts"][0] == dict(id=pid, duplicate=True)
     # every backend down: 502, and the outage itself lands on the board once
@@ -231,7 +231,7 @@ def test_review_fixes_unsupported_params_dedupe_ladder_board_scope_and_vram_cach
             assert e.status == 400
     # a different problem that merely shares a word with an open issue is NOT treated as its duplicate
     other = app.board.post("a", "issue", "Voice library download is slow")["id"]
-    STATE["reply"] = "stuck\nBOARD: Cannot parse the Ghidra output format download"
+    STATE["reply"] = "stuck\nBOARD: Cannot parse the supplier price list format download"
     r = app.router.chat(dict(model="auto", **msg()), "grok")
     pid = r["agentdispatch"]["board_posts"][0]
     assert pid["id"] != other and "duplicate" not in pid

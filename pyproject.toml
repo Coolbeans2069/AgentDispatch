@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentdispatch"
-version = "0.1.0"
-description = "Local multi-agent broker: MCP server, review gate, local-first model router"
+version = "0.1.1"
+description = "Local AI agent broker for small businesses: MCP server, job queue, independent review gate and local-first (Ollama) model routing, with audit trails and approvals"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Coolbeans2069" }]
-keywords = ["mcp", "model-context-protocol", "ai-agents", "ollama", "multi-agent", "llm-router"]
+keywords = ["ai-agents", "mcp", "llm", "automation", "python", "ollama", "local-llm", "model-context-protocol"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

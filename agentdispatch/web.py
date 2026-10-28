@@ -21,7 +21,7 @@ def load_tokens(data):
 
 
 def new_token(data, name, role="agent"):
-    """role 'agent' (every AI client: may use MCP and make suggestions) or 'owner' (the person: may also approve risky tools and reload the index)"""
+    """role 'agent' (every AI client: may use MCP and make suggestions) or 'owner' (the person: may also accept, reject or cancel jobs, allow project folders and choose models)"""
     t = load_tokens(data)
     tok = "sb_" + secrets.token_urlsafe(24)
     t[tok] = dict(actor=name, role=role, created=time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -290,17 +290,6 @@ def make_handler(app):
                     return self._send(200, dict(ok=True, job_id=body["job_id"], depends_on_jobs=deps))
                 if u.path == "/api/jobs/unblock":
                     return self._send(200, dict(ok=True, job=slim_job(app.jobs.unblock(body["job_id"], actor))))
-                if u.path in ("/api/approve", "/api/index/reload") and role != "owner":
-                    return self._send(403, dict(ok=False, error="owner_only", message="this needs an owner token (python -m agentdispatch token NAME --owner); agent tokens cannot approve tools"))
-                if u.path == "/api/approve" and app.index:
-                    app.index.approve(body["tool"], body.get("actor", "*"), int(body.get("minutes", 60)))
-                    return self._send(200, dict(ok=True))
-                if u.path == "/api/index/reload" and app.index:
-                    app.index.reload()                                         # a freshly built index appears without restarting the server
-                    if app.index.indexes:
-                        for t in app.index.tools():
-                            app.mcp.add(t)
-                    return self._send(200, dict(ok=True, backends=list(app.index.indexes)))
                 return self._send(404, dict(error="not found"))
             except Exception as e:
                 return self._send(400, e.as_dict() if hasattr(e, "as_dict") else dict(ok=False, error="bad_request", message=str(e)))
