@@ -19,6 +19,14 @@ from agentdispatch.web import Server, make_handler, new_token
 FAKE = os.path.join(ROOT, "tests", "fake_agent.py")
 IDLE = dict(gpus=[dict(util=1.0)], ram=10.0, ram_total_gb=240, limits={})
 HAVE = {}
+SYMPY_INTEGRAL = "import sympy as sp\nx=sp.symbols('x')\nprint(sp.integrate(sp.sin(x)**2,(x,0,sp.pi)))"
+STDLIB_INTEGRAL = ("import math\nn=200000\nh=math.pi/n\ns=sum(math.sin((i+0.5)*h)**2 for i in range(n))*h\n"
+                   "print('pi/2' if abs(s-math.pi/2)<1e-9 else s)")                      # the same integral, numerically, with the standard library only
+
+
+def integral_code(box):
+    """sympy is an optional extra (requirements-dev.txt): use it when the calculator's python has it, else the standard-library version"""
+    return SYMPY_INTEGRAL if box.reg.scan()["tools"].get("sympy", {}).get("available") else STDLIB_INTEGRAL
 
 
 def agent(mode, strengths, cost="cheap"):
@@ -69,7 +77,7 @@ def test_calculations_lean_git_and_controls_obey_the_policy():
     try:
         st = box.reg.scan(force=True)["tools"]
         assert st["python"]["available"] and st["calc"]["available"]
-        r = box.run("calc", code="import sympy as sp\nx=sp.symbols('x')\nprint(sp.integrate(sp.sin(x)**2,(x,0,sp.pi)))")
+        r = box.run("calc", code=integral_code(box))
         assert r["ok"] and r["stdout"].strip() == "pi/2" and r["sha256"], r
         for bad in ("import os\nos.system('dir')", "open('x','w')", "import subprocess", "__import__('os')", "print(().__class__)", "import numpy as np\nnp.save('a.npy', [1])"):
             r = box.run("calc", code=bad)
@@ -118,7 +126,10 @@ def test_installs_are_requested_never_taken_and_only_from_short_lists():
     from agentdispatch.localtools.installer import Installer
     box.installer = inst = Installer(box, spawn=lambda argv, env, timeout, **k: (calls.append(argv) or (0, "ok")), fetch=lambda url, dest: open(dest, "wb").write(b"zip"))
     try:
-        assert inst.request("sympy", "pull-agent")["state"] == "installed"                           # already there
+        if box.reg.scan()["tools"]["sympy"]["available"]:
+            assert inst.request("sympy", "pull-agent")["state"] == "installed"                       # already there
+        else:
+            assert inst.request("sympy", "pull-agent")["state"] == "pending" and not calls            # missing: only requested, nothing runs
         assert not inst.request("no-such", "x")["ok"]
         r = inst.request("z3", "pull-agent", "need an smt solver")
         if box.reg.scan()["tools"]["z3"]["available"]:
@@ -292,7 +303,7 @@ def test_a_tool_step_runs_on_this_computer_with_no_model_then_is_reviewed_sealed
         j = r["jobs"].create("dev", "integral", "check the integral of sin^2 over 0..pi", "general", "", dict(rubric="the value is shown"), None, 1,
                              dict(campaign="C1", gate="G06", template="numerical-certificate", role="primary", claim_class="CERTIFICATE_NUMERICAL", stop_on=["check_failed", "control_failed", "hash_mismatch"],
                                   controls=[dict(label="adverse: a false identity must fail", tool="calc", code="assert 1 == 2", expect="fail"), dict(label="positive", tool="calc", code="print(2+2)", expect="pass")]))
-        r["jobs"].add_steps(j["id"], [dict(objective="integrate sin^2 on 0..pi exactly", needs=["tool"], tool=dict(tool="calc", code="import sympy as sp\nx=sp.symbols('x')\nprint(sp.integrate(sp.sin(x)**2,(x,0,sp.pi)))"))])
+        r["jobs"].add_steps(j["id"], [dict(objective="integrate sin^2 on 0..pi exactly", needs=["tool"], tool=dict(tool="calc", code=integral_code(r["box"])))])
         out = ticks(r)
         job = r["jobs"].get(j["id"])
         assert job["state"] in ("delivered", "ready"), (job["state"], job["why"], out)
@@ -471,7 +482,10 @@ def test_a_missing_tool_is_found_installed_or_built_and_a_built_one_joins_the_to
     try:
         box, jobs, gov = r["box"], r["jobs"], r["gov"]
         ex = engineer.need_tool(box, jobs, gov, "algebra", "symbolic algebra: integrate and simplify expressions exactly", None, "pull-agent")
-        assert ex["action"] == "exists" and ex["tool"]["id"] in ("sympy", "calc")
+        if box.reg.scan()["tools"]["sympy"]["available"]:
+            assert ex["action"] == "exists" and ex["tool"]["id"] in ("sympy", "calc")
+        else:                                                                                        # sympy is an optional extra: without it the answer is "install it" (owner approval)
+            assert ex["action"] in ("install", "exists") and ex["tool"]["id"] in ("sympy", "calc"), ex
         assert not engineer.need_tool(box, jobs, gov, "x", "short", None, "a")["ok"]
         json.dump(dict(allowed_roots=[r["d"].replace("\\", "/")]), open(os.path.join(r["d"], "nightshift.json"), "w"))
         b = engineer.need_tool(box, jobs, gov, "rot13", "rotate every letter in a text by thirteen places and print the result", [dict(args=["hello"], expect="uryyb")], "pull-agent", build_dir=os.path.join(r["d"], "build"))

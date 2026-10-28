@@ -437,15 +437,6 @@ def post(app, path, raw, query, body_json, actor, role):
             it.file(sid, fid)
             media.start(app, it, sid, fid)
             return 200, dict(ok=True)
-        if action == "known":                                                                    # "this picture shows <name>": a reference photo for recognising them later
-            fid, name = str(body_json.get("fid", "")), "".join(c for c in str(body_json.get("name", "")) if c.isalnum() or c in " _-")[:40].strip()
-            f = it.file(sid, fid)
-            if not name or f["kind"] != "image":
-                raise BoardError("bad_request", "give a name and pick a picture")
-            d = os.path.join(it.dir, "known_faces", name)
-            os.makedirs(d, exist_ok=True)
-            shutil.copy2(f["path"], os.path.join(d, "%s_%s" % (sid, f["name"])))
-            return 200, dict(ok=True, name=name)
         if action == "submit":
             from ..agency.tools import slim
             j = submit(app, sid, actor)

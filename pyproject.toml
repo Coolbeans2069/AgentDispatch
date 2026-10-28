@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentdispatch"
+version = "0.1.0"
+description = "Local multi-agent broker: MCP server, review gate, local-first model router"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Coolbeans2069" }]
+keywords = ["mcp", "model-context-protocol", "ai-agents", "ollama", "multi-agent", "llm-router"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+# The broker itself has no dependencies: the standard library only.
+dependencies = []
+
+[project.optional-dependencies]
+calc = ["sympy", "mpmath", "numpy", "scipy"]
+engineroom = ["psutil"]
+media = ["Pillow", "opencv-python-headless", "faster-whisper", "imageio", "pydub", "soundfile"]
+docs = ["pypdf", "PyMuPDF", "python-docx", "openpyxl", "pandas", "markdown", "mistune", "jsonschema"]
+web = ["httpx", "playwright"]
+units = ["pint", "astropy"]
+all = ["agentdispatch[calc,engineroom,media,docs,web,units]"]
+test = ["sympy", "mpmath"]
+
+[project.urls]
+Homepage = "https://github.com/Coolbeans2069/AgentDispatch"
+Issues = "https://github.com/Coolbeans2069/AgentDispatch/issues"
+
+[tool.setuptools.packages.find]
+include = ["agentdispatch*", "engineroom*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.md", "*.html", "*.txt", "*.py"]

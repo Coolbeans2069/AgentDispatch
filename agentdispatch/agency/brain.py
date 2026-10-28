@@ -11,7 +11,7 @@ ACTIVE_STATES = ("planning", "running", "reviewing", "blocked", "ready", "queued
 LOBE_LABEL = dict(frontal="planning · reasoning", parietal="code · structure", temporal="language · research", occipital="vision · video · image", cerebellum="fast · local reflexes",
                   brainstem="broker", broca="speech", auditory="music · sound", limbic="world · social")
 # where each catalog function lives in the brain (the models page's "which model does what")
-FUNC_LOBE = {"text": "temporal", "code": "parietal", "reasoning": "frontal", "vision": "occipital", "image": "occipital", "image-edit": "occipital", "video": "occipital", "faces": "occipital",
+FUNC_LOBE = {"text": "temporal", "code": "parietal", "reasoning": "frontal", "vision": "occipital", "image": "occipital", "image-edit": "occipital", "video": "occipital",
              "objects": "occipital", "depth": "occipital", "segmentation": "occipital", "music": "auditory", "embedding": "limbic", "speech-stt": "broca", "speech-tts": "broca", "speech-duplex": "broca"}
 DEFAULT_EXPECTED_S =dict(local=40, free=40, cheap=70, plan=50, premium=30)
 
@@ -116,8 +116,6 @@ def difficulty(job, step, attempts=0, tier_rank=0, kind="step"):
     d = 0.22 + 0.2 * min(3, attempts) + 0.12 * tier_rank + 0.08 * max(0, len(needs) - 1) + 0.2 * min(len(obj), 400) / 400.0
     if kind in ("plan", "review"):
         d += 0.1
-    if job.get("kind") == "rebuild":
-        d += 0.15
     return round(max(0.05, min(1.0, d)), 2)
 
 
@@ -182,7 +180,7 @@ def comfy_role(graph):
 
 
 def services(app, ports=(8188, 8189, 8190, 8191, 8192), force=False):
-    """Ollama's loaded models, the ComfyUI windows that answer (and what each is making), and whether MediaStudio's Studio (VisionCore's recognition models) is up"""
+    """Ollama's loaded models, the ComfyUI windows that answer (and what each is making), and whether the local MediaStudio app is up"""
     now = time.time()
     if not force and _svc["data"] is not None and now - _svc["t"] < 3:
         return _svc["data"]

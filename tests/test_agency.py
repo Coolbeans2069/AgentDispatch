@@ -693,7 +693,7 @@ def test_running_models_and_service_windows_appear_as_tenants():
         assert [(w["port"], w["busy"], w["role"]) for w in svc["comfy"]] == [(8188, True, "video"), (8189, False, None)] and svc["studio"] is True
         cards = {c["id"]: c for c in BR.agent_cards(app, svc)}
         assert cards["comfy-video"]["state"] == "active" and cards["comfy-video"]["models"] == ["wan2.2_i2v.safetensors"]
-        assert cards["comfy-image"]["state"] == "online" and cards["visioncore-faces"]["state"] == "online"                         # windows are up but busy with video: image is idle-online
+        assert cards["comfy-image"]["state"] == "online"                        # windows are up but busy with video: image is idle-online
         assert cards["comfy-speech"]["state"] == "online" and cards["ollama-local"]["models"] == ["qwen2.5vl:7b", "local-qwen3-coder-30b:latest"] and cards["ollama-local"]["state"] in ("online", "active")
         ten = BR.tenants(app, svc)
         names = {(t["kind"], t.get("name"), t.get("lobe")) for t in ten if t["kind"] in ("model", "window")}

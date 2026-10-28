@@ -24,7 +24,7 @@ SYSTEM_APPEND = ("You are a member of an automated engineering team and work ins
 def prompt_for(job, step, check, scope_text, failed, has_pack):
     acc = job.get("acceptance") or {}
     check_s = " ".join(check) if isinstance(check, list) else (check or "")
-    code = bool(job.get("target")) and (job.get("kind") in ("code", "rebuild") or bool(check_s))
+    code = bool(job.get("target")) and (job.get("kind") == "code" or bool(check_s))
     return "\n".join([x for x in [
         ("Your project is in /work (a private copy). Make the change by editing the files there; run the checks yourself and fix what fails." if code else
          "Do the work described below and reply with the complete result as your final message (it is read as the step's answer)."),
@@ -261,7 +261,7 @@ class AgenticRunner:
                 shutil.rmtree(board, ignore_errors=True)
 
     @staticmethod
-    def police(ws, check, write_ok=lambda rel: (True, "")):
+    def enforce_writes(ws, check, write_ok=lambda rel: (True, "")):
         """after the run: put back anything the agent must not have changed (protected files, files outside its scope, binaries). -> (touched files, [violations])"""
         bad = []
         for rel, kind in sorted(ws.changes().items()):

@@ -1,6 +1,8 @@
 # AgentDispatch
 
-**A local broker that lets many AI coding agents work as one team.** Claude Code, Codex CLI, Gemini CLI, Grok CLI, local Ollama models and any "pull" agent share one notice board, one lean tool index and one job queue. A task goes in once; AgentDispatch plans it, hands each step to the cheapest capable agent that still has quota, has a *different* agent review the result alongside objective checks, and only then delivers it, all on your own machine.
+[![tests](https://github.com/Coolbeans2069/AgentDispatch/actions/workflows/ci.yml/badge.svg)](https://github.com/Coolbeans2069/AgentDispatch/actions/workflows/ci.yml)
+
+**A local broker that lets many AI coding agents work as one team.** Claude Code, Codex CLI, Gemini CLI, Grok CLI, local Ollama models and any "pull" agent share one notice board, one lean tool index and one job queue. It is **local-first**: work goes to models running on your own machine (Ollama) first, and to cloud models only through API keys you bring yourself. A task goes in once; AgentDispatch plans it, hands each step to the cheapest capable agent that is available, has a *different* agent review the result alongside objective checks, and only then delivers it, all on your own machine.
 
 ![The agency page: jobs, their steps and the agents that are available](docs/screenshots/agency.png)
 
@@ -8,16 +10,18 @@
 Running several agents side by side wastes effort in predictable ways:
 - **They repeat each other's failures.** Agent B retries the exact step agent A already tried and failed.
 - **Tool catalogs eat the context window.** A 170-tool MCP catalog is about 490,000 tokens of schema.
-- **Plan limits run out at random.** Premium agents hit their usage windows while free and local models sit idle.
+- **Local models sit idle.** Everything goes to one expensive cloud model, while a local model could do the bulk of the work.
 - **Nobody checks the work.** The agent that wrote a change is the one saying it is done.
 
 AgentDispatch fixes each of these:
 - An **append-only notice board with an attempt ledger** stops repeated failures.
 - A **compacted, searchable tool index** costs about 500 tokens to browse.
-- A **cost- and quota-aware router** sends work to the agent that can afford it.
+- A **local-first router** sends work to a local Ollama model when one fits, and to your own cloud API keys only when it must.
 - A **review gate** requires an independent reviewer plus real checks before anything counts as done.
 
-Python 3.11+, **standard library only**, no external services required.
+Python 3.11+. The broker itself uses the **standard library only** and needs no external services; a few optional features use extra packages (see [Dependencies](#dependencies)).
+
+> **Vendor terms.** AgentDispatch launches agent CLIs and calls model APIs with the credentials *you* configure. Check each vendor's terms of service for automated or multi-agent use before you connect an account, and prefer API keys and local models for unattended work.
 
 ## Features
 - **MCP server (stdio and HTTP).** Every agent connects the same way. The `lite` profile (8 tools) suits small local models; the `full` profile exposes everything.
@@ -45,9 +49,9 @@ Python 3.11+, **standard library only**, no external services required.
   - an animated "brain" view of the agents (`/brain`);
   - model and tool catalogs.
 - **Engine Room (`engineroom/`, included).** A small local service and dashboard on `:8898`:
-  - gauges for CPU, RAM, GPU, free-tier model use (Gemini, OpenRouter), Ollama throughput and each agent's plan limits;
+  - gauges for CPU, RAM, GPU, Ollama throughput, free-tier API use (Gemini, OpenRouter) and any usage limits you enter for an agent;
   - agent CLIs are detected by process name, with no registration step;
-  - the broker asks it for headroom and quota (`/budget`, `/agents`) before it launches an agent, and it shows the broker's jobs in an AGENCY panel.
+  - the broker asks it for headroom (`/budget`, `/agents`) before it launches an agent, and it shows the broker's jobs in an AGENCY panel.
 
   It is optional: when it is absent, AgentDispatch falls back to learned cooldowns.
 
@@ -153,11 +157,11 @@ Issues can carry a `check` attachment: a folder copy, a test command and the fil
 
 ## Quick start
 Requirements:
-- **Python 3.11+** (no pip packages are needed for the broker);
+- **Python 3.11+** (the broker needs no pip packages; optional extras are listed under [Dependencies](#dependencies));
 - **optional:** Docker (sandboxed checks), Ollama (local models), and any agent CLIs you want the agency to launch.
 
 ```bash
-git clone <this repo> agentdispatch && cd agentdispatch
+git clone https://github.com/Coolbeans2069/AgentDispatch.git agentdispatch && cd agentdispatch
 
 # 1. configure (every value in .env.example is a placeholder)
 cp .env.example .env            # edit: project roots, optional API keys
@@ -245,10 +249,26 @@ docs/AGENCY_SPEC.md            design of the agency
 
 ## Tests
 ```bash
-python tests/run_all.py            # 29 test files, standard library only, no network
+python tests/run_all.py            # 29 test files, no network; passes with the standard library only
+pip install -r requirements-dev.txt && python tests/run_all.py   # also runs the symbolic-maths (sympy) paths
 python tests/run_all.py --e2e      # adds the opt-in end-to-end test (skips when its tools are absent)
 ```
-The live tests (`tests/live_*.py`, `tests/integration_engineroom.py`) skip themselves when a key or service is missing.
+Without sympy, the calculator tests use a standard-library version of the same check and expect "install it" where they would otherwise expect "already installed". The live tests (`tests/live_*.py`, `tests/integration_engineroom.py`) skip themselves when a key or service is missing. GitHub Actions runs the suite on Python 3.11 and 3.12, with and without the extras (`.github/workflows/ci.yml`).
+
+## Dependencies
+The broker, the MCP server, the router, the board and the agency use the **Python standard library only**. Everything below is optional, imported only when the feature is used, and reported as "not installed" otherwise.
+
+| Extra (`pip install ".[name]"`) | Packages | Used by |
+|---|---|---|
+| `calc` | sympy, mpmath, numpy, scipy | the `calc` tool's symbolic and numeric maths (and the full test path) |
+| `engineroom` | psutil | exact CPU/RAM figures in the Engine Room and memory limits for local tool runs |
+| `media` | Pillow, opencv-python-headless, faster-whisper, imageio, pydub, soundfile | image resizing for vision models, `image_info`, `transcribe` (speech to text), `audio_info` |
+| `docs` | pypdf, PyMuPDF, python-docx, openpyxl, pandas, markdown, mistune, jsonschema | `pdf_text`, `docx_text`, `xlsx_probe`, `csv_stats`, `md_render`, `json_check` |
+| `web` | httpx, playwright | `fetch_url`, `browser_fetch` |
+| `units` | pint, astropy | `unit_convert` |
+| `all` | all of the above | |
+
+`requirements-dev.txt` pins the small set the full test run uses (sympy, mpmath).
 
 ## Security notes
 - HTTP listens on 127.0.0.1 only, checks the Host header (DNS-rebinding guard) and requires a bearer token to write.
@@ -256,7 +276,12 @@ The live tests (`tests/live_*.py`, `tests/integration_engineroom.py`) skip thems
 - Agents work on throw-away copies. Nothing is merged outside the configured safe repos, and auto-merge is off by default.
 - All keys and host paths come from environment variables. The data folder is git-ignored.
 
-## License
-MIT; see [LICENSE](LICENSE).
+## Use it for business integrations
+The same pieces (an MCP server, a lean tool index, an approval gate and an audit trail) are what a small business needs to let an AI assistant work with its own systems safely: read tools first, every write behind an explicit approval, every call logged. A separate demo of that pattern, an MCP connector over a **fake** ERP-style dataset (stock, orders, invoices) with one approved write, is planned; it will be linked here when it is published.
 
-Contact: <add>
+For an example of how a job is scoped before any agent runs (requirements, limits, fixtures and an acceptance rule), see [docs/trials/csv_report_service.md](docs/trials/csv_report_service.md).
+
+## License
+MIT; see [LICENSE](LICENSE). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+Contact: questions and work enquiries via [GitHub issues](https://github.com/Coolbeans2069/AgentDispatch/issues).

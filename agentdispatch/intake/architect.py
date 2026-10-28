@@ -101,7 +101,7 @@ class Architect:
 
     # ------------------------------------------------------------ tools the thinker may call mid-thought
     TOOLS_TEXT = ('LOCAL TOOLS (free): to use them reply ONLY with {"tool_calls": [{"tool": "calc", "code": "<python that prints>"}, {"tool": "lean", "code": "<lean>"}, {"tool": "git", "args": ["log", "-3"]}, '
-                  '{"tool": "rea_search", "query": "decompile function"}, {"tool": "rea_describe", "names": ["<tool name>"]}, {"tool": "rea_call", "name": "<tool name>", "arguments": {}}, '
+                  '{"tool": "rea_search", "query": "read a file format"}, {"tool": "rea_describe", "names": ["<tool name>"]}, {"tool": "rea_call", "name": "<tool name>", "arguments": {}}, '
                   '{"tool": "playbook_search", "query": "similar past work"}, {"tool": "local_llm", "prompt": "draft / summarise / extract this (free local model: check its answer)"}, {"tool": "freecad", "args": ["<script.py in a project folder>"]}, {"tool": "tool_list"}]} (at most 4 per round, at most %d rounds); you are sent the outputs, then give your final JSON.' % MAX_ROUNDS)
 
     def run_tool(self, c, sid):
@@ -222,7 +222,7 @@ class Architect:
     def p_study(self, s):
         return "\n".join([self.core(), "PASS=study", "Before designing, understand what must be understood. For every item in reference_systems and every attached file that is software, firmware or a data format: study it with the "
                           "REA reverse-engineering tools (rea_search, rea_describe, rea_call) and the local tools, and record concrete findings (formats, protocols, algorithms, constants, behaviours, "
-                          "limits). Decompile or inspect what you must; never guess what a tool could tell you. If nothing needs studying say so.", self.TOOLS_TEXT, self.context(s),
+                          "limits). Inspect what you must; never guess what a tool could tell you. If nothing needs studying say so.", self.TOOLS_TEXT, self.context(s),
                           'Reply: {"findings": [{"about": "<what>", "text": "<what you learned, concrete>"}], "blueprint": {"reference_systems": [...], "assumptions": [...], "risks": [...]}}'])
 
     def p_design(self, s):

@@ -36,9 +36,9 @@ CREATE INDEX IF NOT EXISTS i_jobs_state ON jobs(state); CREATE INDEX IF NOT EXIS
 
 
 def is_code(job):
-    """does this job change files in a project folder? Any job of kind code / rebuild, and ANY job that names a target folder and an acceptance check (a `production` job with a project folder and
+    """does this job change files in a project folder? Any job of kind code, and ANY job that names a target folder and an acceptance check (a `production` job with a project folder and
     `python tools/acceptance.py` is code work too): agents get the project's files and answer with file contents, not prose"""
-    return job.get("kind") in ("code", "rebuild") or bool(job.get("target") and (job.get("acceptance") or {}).get("check"))
+    return job.get("kind") == "code" or bool(job.get("target") and (job.get("acceptance") or {}).get("check"))
 
 
 from ..textfit import fit as _fit

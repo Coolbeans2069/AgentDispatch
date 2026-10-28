@@ -1,0 +1,3 @@
+# Optional: what the full test run uses. The broker and the default test run need nothing from here.
+sympy>=1.12
+mpmath>=1.3

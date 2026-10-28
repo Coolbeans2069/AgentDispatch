@@ -1,7 +1,7 @@
 """looking at what a person attached, AFTERWARDS (never live): speech is transcribed by a faster-whisper model that is already on disk, pictures are described by a vision model that is already in
-Ollama, video is split into a few frames plus its sound track, and faces are found (and compared with a gallery of known people if the person built one). Everything runs on this computer; when a GPU is
+Ollama, video is split into a few frames plus its sound track. Nothing tries to identify people. Everything runs on this computer; when a GPU is
 busy with a render the vision step waits instead of competing for it."""
-import base64, io, json, os, re, shutil, threading, time, urllib.request
+import base64, io, json, os, re, threading, time, urllib.request
 
 OLLAMA = "http://127.0.0.1:11434"
 VISION_PROMPT = ("Describe this picture for someone who will build something from it: what is in it, the layout, any text, numbers, dimensions or labels you can read, materials, colours and anything "
@@ -73,12 +73,6 @@ def transcribe(app, path, language=None):
     return None, "; ".join(r.get("problems") or ["transcription failed"])[:200]
 
 
-def faces(app, paths, gallery_dir):
-    r = app.localtools.run("faces", args=list(paths)[:12], timeout=600, caller="intake", env=dict(AD_GALLERY=gallery_dir or ""))
-    d = r.get("data") or {}
-    return (d if r.get("ok") and d.get("ok") else None), "; ".join(r.get("problems") or [])[:160]
-
-
 def video_parts(app, path, workdir, n_frames=4):
     """-> (frames [paths], audio path | None, seconds): a few evenly spaced frames and the sound track, made with ffmpeg"""
     os.makedirs(workdir, exist_ok=True)
@@ -104,7 +98,6 @@ def analyze(app, intake, sid, fid):
     """the whole look at one attachment, in a background thread. Writes the summary into the session and tells the chat what it found."""
     f = intake.file(sid, fid)
     intake.set_analysis(sid, fid, state="running", summary="")
-    gallery = os.path.join(intake.dir, "known_faces")
     lines, details, waiting = [], {}, False
     try:
         if f["kind"] == "audio":
@@ -139,13 +132,6 @@ def analyze(app, intake, sid, fid):
                     break
             lines += descs
             details["descriptions"] = descs
-            if paths and not waiting:
-                fd, note = faces(app, paths, gallery)
-                if fd:
-                    n = sum(r["count"] for r in fd["results"])
-                    named = sorted({x["looks_like"] for r in fd["results"] for x in r["faces"] if x.get("looks_like")})
-                    lines.append("Faces: %d found%s." % (n, (", looks like " + ", ".join(named) + " (a similarity score, not proof)") if named else ""))
-                    details["faces"] = fd
     except Exception as e:
         lines.append("The look failed: %s: %s" % (e.__class__.__name__, str(e)[:120]))
     summary = "\n".join(lines).strip() or "Nothing could be read from it."

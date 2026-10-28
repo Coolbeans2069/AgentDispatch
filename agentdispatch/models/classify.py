@@ -17,7 +17,6 @@ RULES = [
     ("video", "generation", r"\bwan[-_ ]?2|wan2\.|wan_|ltx[-_ ]?video|ltx-|ltxv|hunyuan[-_ ]?video|hunyuanvideo|cogvideo|mochi|animatediff|stable[-_ ]video|\bsvd\b|\bi2v\b|\bt2v\b|\bs2v\b|skyreels|framepack|video"),
     ("image", "edit", r"image[-_ ]?edit|qwen[-_ ]image[-_ ]edit|kontext|instruct[-_ ]?pix2pix"),
     ("image", "generation", r"v1-5-pruned|pruned-emaonly|emaonly|v2-1_|v1-4|flux|sd[-_ ]?xl|sd3|sd[-_]?1\.5|sd[-_]?2|stable[-_ ]diffusion|z[-_ ]image|qwen[-_ ]image|dreamshaper|juggernaut|realvis|illustrious|pony|hidream|chroma|lumina|playground|kolors|pixart|cascade"),
-    ("recognition", "faces", r"insightface|buffalo|arcface|retinaface|antelope|scrfd|facenet|face[-_ ]?(recog|embed|detect)|adaface"),
     ("recognition", "depth", r"depth[-_ ]anything|midas|zoedepth|\bdpt[-_]"),
     ("recognition", "segmentation", r"u2net|rembg|birefnet|isnet|modnet|matting|background[-_ ]remov"),
     ("recognition", "objects", r"\byolo|yolov|\bsam[-_]?(vit|2|hq)?\b|segment[-_ ]anything|detr\b|grounding[-_ ]?dino|owl[-_ ]?vit|\bdino(v2)?\b|clip[-_ ]vit|siglip|\bocr\b|florence"),

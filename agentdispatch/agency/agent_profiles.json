@@ -281,10 +281,6 @@
   "comfy-music": {
    "enabled_by_default": false,
    "note": "not driven by the agency yet"
-  },
-  "visioncore-faces": {
-   "enabled_by_default": false,
-   "note": "not driven by the agency yet"
   }
  }
 }

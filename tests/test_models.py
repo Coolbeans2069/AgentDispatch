@@ -38,7 +38,7 @@ def test_names_become_the_right_kind_of_work():
     cases = {"personaplex-7b-v1": ("speech", "duplex"), "nvidia/parakeet-tdt-0.6b": ("speech", "stt"), "whisper-large-v3": ("speech", "stt"), "kokoro-82m": ("speech", "tts"), "s2-pro": ("speech", "tts"),
              "wan2.2_i2v_high_noise_14B_fp8_scaled": ("video", "generation"), "ltx-2.3-22b-dev": ("video", "generation"), "hunyuanvideo1.5_720p": ("video", "generation"),
              "z_image_turbo_bf16": ("image", "generation"), "flux1-dev": ("image", "generation"), "qwen_image_edit_2511_fp8mixed": ("image", "edit"), "sd_xl_base_1.0": ("image", "generation"),
-             "acestep_v1.5_xl_turbo": ("audio", "music"), "buffalo_l": ("recognition", "faces"), "insightface-antelopev2": ("recognition", "faces"), "yolov8n": ("recognition", "objects"),
+             "acestep_v1.5_xl_turbo": ("audio", "music"), "yolov8n": ("recognition", "objects"),
              "depth_anything_v2_small": ("recognition", "depth"), "u2net": ("recognition", "segmentation"), "qwen2.5vl:7b": ("vision", "vlm"), "llava-1.6-34b": ("vision", "vlm"),
              "nomic-embed-text": ("embedding", "text"), "local-qwen3-coder-30b": ("text", "code"), "deepseek-r1-8b": ("text", "reasoning"), "gpt-oss-120b": ("text", "reasoning"),
              "local-gemma3-27b": ("text", "chat"), "bigscience/bloom-7b1": ("text", "chat"), "EleutherAI/gpt-j-6B": ("text", "chat")}
@@ -47,7 +47,7 @@ def test_names_become_the_right_kind_of_work():
     assert C.params_b("local-gemma3-27b") == 27 and C.params_b("personaplex-7b-v1") == 7 and C.params_b("whisper-tiny-39m") == 0.039 and C.params_b("qwen3-30b-a3b") == 30
     assert C.quant_of("model-q4_k_m") == "q4_k_m" and C.quant_of("wan2.2_fp8_scaled") == "fp8_scaled" and C.quant_of("plain") == ""
     assert [C.size_class(p, None) for p in (1, 7, 27, 70, 120)] == ["tiny", "small", "medium", "large", "huge"]
-    assert [function_of(dict(modality=a, subtype=b)) for a, b in (("speech", "duplex"), ("text", "chat"), ("image", "edit"), ("recognition", "faces"))] == ["speech-duplex", "text", "image-edit", "faces"]
+    assert [function_of(dict(modality=a, subtype=b)) for a, b in (("speech", "duplex"), ("text", "chat"), ("image", "edit"), ("recognition", "objects"))] == ["speech-duplex", "text", "image-edit", "objects"]
     assert function_of(dict(modality="component", subtype="vae", component="vae")) is None and "speech-duplex" in FUNCTIONS
 
 
@@ -149,7 +149,7 @@ def test_catalog_keeps_the_users_decisions_and_the_ai_respects_them():
         assert cat.pick("speech-duplex")["model"]["name"] == "nvidia/personaplex-7b-v1" and cat.pick("speech-duplex")["by"] == "user"
         p = cat.pick("video")                                                                                 # no pin: the AI chooses, and says why
         assert p["model"]["name"] == "wan2.2_i2v_low_noise_14B_fp8_scaled" and p["by"] == "ai" and "a favourite" in p["reasons"]
-        assert cat.pick("faces")["model"] is None and "no recognise faces model" in cat.pick("faces")["reasons"][0]
+        assert cat.pick("segmentation")["model"] is None and "no cut out / segment model" in cat.pick("segmentation")["reasons"][0]
         assert cat.pick("video", max_size_gb=0.0001)["model"]["name"] == "wan2.2_i2v_low_noise_14B_fp8_scaled" or True
         try:
             cat.select("telepathy", pp["id"])

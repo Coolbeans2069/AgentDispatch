@@ -186,7 +186,7 @@ def derive(app, session, text, mode="local"):
             low = text.lower()
             if any(w in low for w in ("video", "short", "render", "ffmpeg", "trailer")):
                 patch["kind"] = "production"
-            elif any(w in low for w in ("website", "web app", "repo", "code", "script", "cli", "rebuild")):
+            elif any(w in low for w in ("website", "web app", "repo", "code", "script", "cli")):
                 patch["kind"] = "code"
     new, changed, notes = merge(form, patch, app.data)
     if notes:

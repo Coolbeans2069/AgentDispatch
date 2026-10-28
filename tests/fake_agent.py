@@ -31,7 +31,7 @@ elif mode == "toolcalls":                                              # asks th
     if "TOOL RESULTS" in prompt:
         print(json.dumps(dict(answer="the integral is pi/2 (checked with the local calculator)", notes="used calc")))
     else:
-        print(json.dumps(dict(tool_calls=[dict(tool="calc", code="import sympy as sp\nx=sp.symbols('x')\nprint(sp.integrate(sp.sin(x)**2,(x,0,sp.pi)))")])))
+        print(json.dumps(dict(tool_calls=[dict(tool="calc", code="import math\nn=20000\nh=math.pi/n\nprint('pi/2' if abs(sum(math.sin((i+0.5)*h)**2 for i in range(n))*h-math.pi/2)<1e-9 else 'no')")])))
 elif mode == "closes":                                                 # claims everything, including what only an independent job may claim
     print(json.dumps(dict(answer="G06 closed: coverage = 87%", notes="ok", result=dict(claim_class="INDEPENDENTLY_CONFIRMED", first_open_premise="", requested_transition={"G06": "CLOSED-AUDITED"}, values={"bound": "1/8"}))))
 elif mode == "opens":
@@ -50,7 +50,7 @@ elif mode == "architect":                                              # a scrip
     if "PASS=interview" in prompt:
         print(json.dumps(dict(reply="Understood: a fold-down bracket under 8 kg. Which anchor type?", blueprint=dict(title="Fold-down wall bracket", summary="A fold-down wall bracket for a 45 kg compressor.",
               feasibility=dict(verdict="feasible", why="standard steel fabrication"), goals=["hold 45 kg"], requirements=reqs, open_questions=[dict(id="Q1", question="Which anchor type?", why="changes the plate", default="M12 chemical anchors")],
-              reference_systems=[dict(name="vendor-firmware.bin", why="its load table", how_to_study="decompile")]))))
+              reference_systems=[dict(name="vendor-firmware.bin", why="its load table", how_to_study="inspect the format")]))))
     elif "PASS=study" in prompt:
         if "TOOL RESULTS" in prompt:
             print(json.dumps(dict(findings=[dict(about="vendor-firmware.bin", text="the load table starts at 0x400 and lists 12 entries")])))

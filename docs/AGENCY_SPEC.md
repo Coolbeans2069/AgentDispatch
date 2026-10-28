@@ -5,7 +5,7 @@ Status: design document. Stage 0 (jobs, registry, dispatcher, gate with fake age
 ## 0. Purpose and scope
 A cross-platform AI agency: a task goes in once; the agency splits it, picks the right agent for each step (Claude, Codex, Gemini CLI, Grok CLI, pull agents, local Ollama), within what each agent has left, reviews the result with a different agent plus objective checks, and either delivers it, merges it (safe repos only) or puts it in front of the owner.
 It extends what exists - the broker (notice board, attempt ledger, router, night shift, tool index) and the engine room (agent detection, limits, GPU/CPU/RAM headroom) - and adds no third service.
-Job kinds, in build order: **code** (change a repo), **rebuild** (study a baseline program with REA and build a new, original implementation from the user's needs; section 4), **production** (a MediaStudio render / repair), **general** (research, writing, automation).
+Job kinds, in build order: **code** (change a repo), **production** (a MediaStudio render / repair), **general** (research, writing, automation).
 
 Non-goals for 0.4.0: a web UI beyond the engine room panel; running agents on other machines; changing MediaStudio's pipeline logic.
 
@@ -50,37 +50,15 @@ One query: jobs in `ready`, `blocked`, `failed`, plus pending tool approvals. Sh
 0. Skeleton: jobs, registry, dispatcher, gate, fake agents only; plans and assigns, executes nothing real. (0.4.0-alpha)
 1. Real code runs on a scratch clone of the engine room: Ollama, then `codex exec`, `gemini -p`, `claude -p`; review gate; simulated merge.
 2. `auto_merge` on for the safe repos.
-1.5. Rebuild jobs (section 4): assess -> build -> tests -> mutants -> originality, on a small first target.
 3. Production jobs: the soak runner becomes a job type; watchdog incidents become jobs.
 4. General solver: planner + rubric reviewer.
 ### 3.4 Testing
 Fake adapters (deterministic): selection, escalation, cooldown, caps, state machine, gate decisions, protected-path and hash checks, kill switch. Live: one cheap task per CLI. Chaos: limit hit, hang, protected-file edit, secret in diff, failing diff, post-merge failure + revert, Studio busy. Then the repeated review loop used for earlier broker releases.
 
-## 4. The rebuild job kind (reference-guided rebuild, "clean-room" when strict)
-Goal: study how a baseline works, then build a whole new thing from the user's needs, with the baseline as a reference to check against (fewer blind mistakes, fewer flow errors), lean and user-need driven. Reading the baseline is allowed; copying it is not.
-### 4.1 Job fields
-`kind=rebuild`, `baseline` (a binary / folder / project id REA can open), `brief` (what the user wants: requirements, improvements, constraints), `mode` = `guided` (default: the rebuilder may read the analyst's evidence pages) or `strict` (the rebuilder sees only the behavior spec), `acceptance` (tests from 4.2 plus the gates of 4.3), `target` (where the new code goes; same allowed-roots rule as code jobs).
-### 4.2 Stages (each a step, each run by a separate agent session)
-1. **Assess** - analyst. Uses REA through the lean tools (`tool_search` -> `tool_describe` -> `tool_call`; results stay by reference, read in pages). Output: `spec.md` (behavior, rules, edge cases, error behavior, formats), `flow.md`, `findings.md` (defects, improvement opportunities), `evidence.json` (REA result refs). The spec may not contain code, decompiler output, addresses or hex dumps (scrubbed and checked; see 4.3).
-2. **Design + build** - builder. Gets the brief, `spec.md`, `flow.md` and (guided) the evidence pages; works in a sandbox copy of the target; no REA tools, no access to the baseline binary or its folder, no network.
-3. **Tests** - test author. Writes tests from the spec and the brief only (never from the builder's code). When the baseline is runnable, also characterization tests: the same inputs run through both, outputs compared.
-4. **Mutation** - saboteur. Writes at least 3 plausible broken versions of the new code (wrong rule, missing edge case, off-by-one in a format, ...). The test suite must FAIL on every one; a surviving mutant sends the job back to step 3.
-5. **Review** - the existing independent reviewer (section 2.2).
-### 4.3 Gates added for this kind
-- **Role separation (enforced, not requested):** analyst, builder, test author and saboteur are four different runs; the builder and the test author may not share a session; the saboteur sees the code but not the tests' answers. Where agents are available the four are also different agents. The builder's MCP profile has no REA and no `tool_call` to REA; the check is made by the dispatcher before launch and recorded.
-- **Mutation gate:** `mutants_total >= 3` and `mutants_killed == mutants_total`.
-- **Originality gate:** similarity of the new code against the baseline artifacts (decompiler text, strings, recovered identifiers) by token n-gram and AST shape stays below a threshold (default 0.30 on any file); any file above it goes to the owner with the matching spans. Plus `provenance.json`: which evidence refs informed which module.
-- **Spec scrub:** `spec.md` is refused if it contains decompiler-style code blocks, address patterns, long hex runs or function bodies.
-- **Owner checkpoint:** before step 1 the job shows the baseline and the owner's recorded note (license / ownership is the owner's call); nothing is analysed until it is acknowledged.
-### 4.4 Scope honesty
-Fits websites, desktop and mobile apps, tools, libraries. Safety-critical software (aviation, medical) is only ever a prototype: passing tests and mutants shows the tests are strong, it does not certify anything.
-### 4.5 Rollout
-Stage 1.5, after the real adapters and the sandbox check runner (Stage 1): a first rebuild on a small program the owner picks, with the mutation and originality gates switched on.
-
-## 5. Risks and open points
+## 4. Risks and open points
 - Headless runs spend plan usage: per-agent `daily_cap`, default low.
 - Claude / pull agent limits are unknown: cooldown learning is the only signal.
 - Windows process handling: kill the whole tree; never leave a CLI orphaned.
 - The agency must not starve production: it checks engine room headroom before local-model runs.
-- A rebuild is only as good as the analysis: REA's lean index missed one query (IPC channels) in the hard set, so the analyst step must be allowed to fall back to `tool_search` with different wording and to report what it could not find.
+- The lean tool index can miss: REA's index missed one query in the hard set, so an agent must be allowed to fall back to `tool_search` with different wording and to report what it could not find.
 - Hardware incidents: production resumes only on the owner's word, and the agency inherits that switch (`agency_off`).

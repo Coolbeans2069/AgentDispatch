@@ -395,7 +395,7 @@ class ToolBox:
         return self._spawn([info["path"]] + args, run_cwd, timeout, self._env(gpu), stdin=stdin, label=spec["id"])
 
     def _script(self, spec, files, timeout, gpu, env):
-        """one of the program's own scripts (speech to text, faces, pdf, csv, …) on files inside the allowed folders; `env` is for the app's own calls (language, device, gallery), never from a model"""
+        """one of the program's own scripts (speech to text, pdf, csv, …) on files inside the allowed folders; `env` is for the app's own calls (language, device), never from a model"""
         files = [str(f) for f in (files or [])][:12]
         if not files:
             return dict(ok=False, problems=["give the file(s) to work on"])

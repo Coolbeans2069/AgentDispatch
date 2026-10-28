@@ -4,10 +4,10 @@ import json, os, threading, time
 
 from . import scan as S
 
-FUNCTIONS = ("text", "code", "reasoning", "vision", "image", "image-edit", "video", "speech-stt", "speech-tts", "speech-duplex", "music", "embedding", "faces", "objects", "depth", "segmentation")
+FUNCTIONS = ("text", "code", "reasoning", "vision", "image", "image-edit", "video", "speech-stt", "speech-tts", "speech-duplex", "music", "embedding", "objects", "depth", "segmentation")
 FUNC_LABEL = {"text": "chat / writing", "code": "coding", "reasoning": "reasoning", "vision": "see pictures (vision-language)", "image": "make images", "image-edit": "edit images", "video": "make video",
               "speech-stt": "speech to text", "speech-tts": "text to speech", "speech-duplex": "voice conversation (speech to speech)", "music": "make music / sound", "embedding": "embeddings / search",
-              "faces": "recognise faces", "objects": "recognise objects and patterns", "depth": "estimate depth", "segmentation": "cut out / segment"}
+              "objects": "recognise objects and patterns", "depth": "estimate depth", "segmentation": "cut out / segment"}
 
 
 def function_of(m):
@@ -17,7 +17,7 @@ def function_of(m):
         return None
     return {("text", "code"): "code", ("text", "reasoning"): "reasoning", ("text", "chat"): "text", ("vision", "vlm"): "vision", ("image", "generation"): "image", ("image", "edit"): "image-edit",
             ("video", "generation"): "video", ("speech", "stt"): "speech-stt", ("speech", "tts"): "speech-tts", ("speech", "duplex"): "speech-duplex", ("audio", "music"): "music",
-            ("embedding", "text"): "embedding", ("recognition", "faces"): "faces", ("recognition", "objects"): "objects", ("recognition", "depth"): "depth",
+            ("embedding", "text"): "embedding", ("recognition", "objects"): "objects", ("recognition", "depth"): "depth",
             ("recognition", "segmentation"): "segmentation"}.get((mod, sub))
 
 

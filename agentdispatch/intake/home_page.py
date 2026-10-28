@@ -78,7 +78,6 @@ button.go:hover:not(:disabled){background:rgba(25,240,200,.22);box-shadow:0 0 12
       <button data-p="Concept a small UAV / model airplane for mission …">Airplane</button>
       <button data-p="Concept a car / vehicle for … with targets …">Car concept</button>
       <button data-p="Commercial product pack: name, sell sheet and packaging for …">Commercial</button>
-      <button data-p="Rebuild the behaviour of this program into clean original software: … (use REA)">REA rebuild</button>
       <button data-p="I want to …">Blank</button>
     </div>
     <div id="actions">
@@ -164,7 +163,7 @@ async function start(){try{await loadProjects(false)}catch(e){log(e.message,"err
 
 function draw(first){if(!S)return;
  const m=$("#msgs"),n=m.children.length;if((S.messages||[]).length!==n||first){m.replaceChildren(...(S.messages||[]).map(x=>el("div",{class:"msg "+x.role+(x.auto?" auto":"")},x.text,x.t?el("small",{},new Date(x.t*1000).toLocaleTimeString()):"")));
-  if(!(S.messages||[]).length&&first)m.append(el("div",{class:"msg assistant"},"Command Centre online. Pick a starter above or describe what you want — video, website, CAD, airplane study, commercial pack, REA rebuild, anything the agency can plan. I will walk you start to finish."));
+  if(!(S.messages||[]).length&&first)m.append(el("div",{class:"msg assistant"},"Command Centre online. Pick a starter above or describe what you want — video, website, CAD, airplane study, commercial pack, anything the agency can plan. I will walk you start to finish."));
   m.scrollTop=1e9}
  const om=$("#omsgs");om.replaceChildren(...(S.ops_messages||[]).map(x=>el("div",{class:"msg "+x.role},x.text)));if(!(S.ops_messages||[]).length)om.append(el("div",{class:"msg sys"},"Ops stream: once jobs are running, send live changes here."));om.scrollTop=1e9;
  const ph=S.phase||"interview",run=S.work&&S.work.state==="running";$("#phase").textContent=(run?"working · ":"")+ph;

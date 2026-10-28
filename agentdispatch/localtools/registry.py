@@ -61,7 +61,7 @@ SPECS = [
     dict(id="cv2", name="OpenCV", kind="vision", lobe="occipital", color="#5dff9a", desc="computer vision arrays and filters", run="lib", lib="cv2", pip="opencv-python-headless"),
     dict(id="skimage", name="scikit-image", kind="vision", lobe="occipital", color="#5dff9a", desc="image processing algorithms", run="lib", lib="skimage", pip="scikit-image"),
     dict(id="imageio", name="imageio", kind="media", lobe="occipital", color="#ff4d9d", desc="read image / video frames as arrays", run="lib", lib="imageio", pip="imageio"),
-    dict(id="mediapipe", name="MediaPipe", kind="vision", lobe="occipital", color="#5dff9a", desc="hands, pose, face landmarks", run="lib", lib="mediapipe", pip="mediapipe"),
+    dict(id="mediapipe", name="MediaPipe", kind="vision", lobe="occipital", color="#5dff9a", desc="hand and pose landmarks", run="lib", lib="mediapipe", pip="mediapipe"),
     dict(id="trimesh", name="trimesh", kind="cad", lobe="occipital", color="#4da3ff", desc="triangle meshes: load/measure/repair in memory", run="lib", lib="trimesh", pip="trimesh"),
     dict(id="soundfile", name="soundfile", kind="media", lobe="auditory", color="#ffd34d", desc="read audio samples and metadata", run="lib", lib="soundfile", pip="soundfile"),
     dict(id="librosa", name="librosa", kind="media", lobe="auditory", color="#ffd34d", desc="audio analysis: mel, onset, pitch", run="lib", lib="librosa", pip="librosa"),
@@ -98,8 +98,6 @@ SPECS = [
     dict(id="md_render", name="Markdown render", kind="docs", lobe="temporal", color="#9fd8ff", desc="render a Markdown file to plain text or HTML", run="script", script="md_render.py", lib="mistune", pip="mistune"),
     dict(id="transcribe", name="Speech to text (faster-whisper)", kind="speech", lobe="broca", color="#ffd34d", desc="turn the speech in an audio or video file into text, locally, with a model already on disk", run="script",
          script="transcribe.py", lib="faster_whisper", pip="faster-whisper", model_function="speech-stt"),
-    dict(id="faces", name="Face detection and recognition (insightface)", kind="vision", lobe="occipital", color="#5dff9a", desc="find faces in pictures and compare them with a gallery of known people: a similarity score, not proof of identity",
-         run="script", script="faces.py", lib="insightface", pip="insightface"),
     # ---- formal / test / lint ----
     dict(id="lean", name="Lean 4", kind="formal", lobe="frontal", color="#e8793a", desc="check a formal proof or an exact finite statement (a file is accepted only if it compiles with no errors and no sorry)", run="exe", exe=["lean"], recipe="elan", version_must_pass=True),
     dict(id="lake", name="Lake (Lean build)", kind="formal", lobe="frontal", color="#e8793a", desc="build a Lean project with its dependencies", run="exe", exe=["lake"], recipe="elan"),
@@ -142,7 +140,7 @@ KNOWN_DIRS = [r"%USERPROFILE%\.elan\bin", r"%LOCALAPPDATA%\Programs\Python",
               r"C:\Program Files\Docker\Docker\resources\bin", r"C:\Program Files\Google\Chrome\Application"]
 _PROBE_LIBS = [
     "sympy", "mpmath", "numpy", "scipy", "z3", "flint", "gmpy2", "networkx", "pytest", "hypothesis", "ruff", "mypy",
-    "psutil", "faster_whisper", "insightface", "pandas", "matplotlib", "sklearn", "statsmodels", "seaborn", "numba",
+    "psutil", "faster_whisper", "pandas", "matplotlib", "sklearn", "statsmodels", "seaborn", "numba",
     "jax", "xarray", "h5py", "pint", "uncertainties", "astropy", "skyfield", "symengine", "shapely", "pyproj",
     "geopandas", "jsonschema", "pydantic", "yaml", "toml", "orjson", "markdown", "mistune", "torch", "transformers",
     "sentence_transformers", "tiktoken", "nltk", "spacy", "PIL", "cv2", "skimage", "imageio", "mediapipe", "trimesh",

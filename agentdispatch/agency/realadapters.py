@@ -530,7 +530,7 @@ class RealAdapter(Adapter):
         return Result(ok=True, text=notes or "changed %d file(s)" % len(touched), touched=touched, diff_lines=lines)
 
     def _run_agentic(self, agent, step, job):
-        """a local model as an agent: it works inside its own container (the project copy at /work, the notice board / playbooks / local tools through the gateway); what it touched is policed, then the
+        """a local model as an agent: it works inside its own container (the project copy at /work, the notice board / playbooks / local tools through the gateway); what it touched is checked against its write rules, then the
         normal check and review apply. A job with no project folder is a text job: the agent's final message is the answer."""
         from .agentic import AgenticRunner, prompt_for
         from ..campaign import scope as SC
@@ -577,7 +577,7 @@ class RealAdapter(Adapter):
                 pass
         if not code:
             return Result(ok=True, text=out.strip()) if out.strip() else Result(ok=False, error="the agent gave no answer")
-        touched, bad = runner.police(ws, chk, lambda rel: SC.write_ok(meta, rel))
+        touched, bad = runner.enforce_writes(ws, chk, lambda rel: SC.write_ok(meta, rel))
         if bad:
             return Result(ok=False, text=_shown(out), error="the agent changed what it must not: " + "; ".join(bad), touched=touched)
         if not touched:
