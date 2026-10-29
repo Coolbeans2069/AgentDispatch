@@ -1,4 +1,5 @@
 import argparse, json, os, sys, time
+from .paths import OLLAMA_URL as _OLLAMA
 
 from .app import App, DEFAULT_DATA
 
@@ -43,6 +44,7 @@ def main(argv=None):
     s.add_argument("--actor", default=None, help="fix the author name used for posts (default: the client's own name)")
     s = sp.add_parser("serve", help="HTTP: /mcp, the bulletin page and the JSON API (127.0.0.1 only)")
     s.add_argument("--port", type=int, default=8870)
+    s.add_argument("--host", default=None, help="address to listen on (default: $AGENTDISPATCH_HOST or 127.0.0.1; the Docker image uses 0.0.0.0)")
     s = sp.add_parser("token", help="create a bearer token for an HTTP client")
     s.add_argument("name")
     s.add_argument("--owner", action="store_true", help="owner role: may accept, reject and cancel jobs and allow project folders (give this only to people)")
@@ -117,7 +119,7 @@ def main(argv=None):
         return 0
     if a.cmd == "serve":
         from .web import serve
-        serve(App(a.data), a.port)
+        serve(App(a.data), a.port, a.host)
         return 0
     if a.cmd == "token":
         from .web import new_token
@@ -262,7 +264,7 @@ def main(argv=None):
                             dict(role="user", content=prompt),
                         ],
                     )).encode("utf-8")
-                    req = _ur.Request(cc.get("ollama", "http://127.0.0.1:11434").rstrip("/") + "/api/chat", data=body,
+                    req = _ur.Request(cc.get("ollama", _OLLAMA).rstrip("/") + "/api/chat", data=body,
                                       headers={"Content-Type": "application/json"}, method="POST")
                     with _ur.urlopen(req, timeout=180) as r:
                         data = _json.loads(r.read().decode("utf-8", "replace"))

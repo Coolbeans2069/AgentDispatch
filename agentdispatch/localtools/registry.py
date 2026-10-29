@@ -2,6 +2,7 @@
 fixed drives, importable libraries), never by a fixed path, so another user's machine gets its own list. Tools a model engineered (data/tools/custom/<name>/manifest.json) join the list by themselves.
 `lobe` is where the tool sits in the brain picture."""
 import glob, json, os, re, shutil, subprocess, sys, time
+from ..paths import OLLAMA_URL as _OLLAMA
 
 from ..nightshift import kill_tree
 
@@ -291,10 +292,10 @@ class Registry:
             elif kind == "local_llm":
                 try:
                     import urllib.request
-                    with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=1.5) as r:
+                    with urllib.request.urlopen(_OLLAMA + "/api/tags", timeout=1.5) as r:
                         t.update(available=r.status == 200, path="ollama", version="ollama is answering")
                 except Exception:
-                    t["note"] = "Ollama is not answering on 127.0.0.1:11434"
+                    t["note"] = "Ollama is not answering on " + _OLLAMA
             elif kind == "exe":
                 p = next((x for x in (which(n, self.cfg.get("extra_dirs") or []) for n in s["exe"]) if x), None)
                 if p:

@@ -7,6 +7,7 @@
 Everything the agent does lands in the throw-away copy; the agency then checks what it touched (protected files, scope, binaries are reverted and fail the step) and the normal acceptance check, review and
 apply gate take over."""
 import json, os, re, shutil, subprocess, tempfile, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 from ..textfit import fit as _fit, tail as _tail
 
 from ..nightshift import is_protected, kill_tree
@@ -71,7 +72,7 @@ def _names(tags):
 class AgentEnv:
     """everything around one run that is not the model: the context pack, the gateway run, the pinned model window"""
 
-    def __init__(self, app, gateway, caps, ollama="http://127.0.0.1:11434", cfg=lambda: {}, fetch=_req, watch=None):
+    def __init__(self, app, gateway, caps, ollama=_OLLAMA, cfg=lambda: {}, fetch=_req, watch=None):
         self.app, self.gateway, self.caps, self.ollama, self.cfg, self.fetch, self.watch = app, gateway, caps, ollama, cfg, fetch, watch
 
     # ---------------------------------------------------------------- the model window

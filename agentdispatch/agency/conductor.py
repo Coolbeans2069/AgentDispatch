@@ -4,6 +4,7 @@ swaps as JSON. The broker VALIDATES each swap (real model names only, skill 0..1
 router in the broker and in the agency daemon both pick up on their next decision. Every accepted and rejected swap is logged on the board and in conductor_log.jsonl. The deterministic router keeps
 working when the conductor is off, down or over its call budget; `conductor_off` (a file in the data folder) or enabled=false stops it."""
 import json, os, re, threading, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 from ..textfit import fit as _fit
 
 from . import routing as R
@@ -12,7 +13,7 @@ from . import routing as R
 # apply: "auto" applies valid swaps, "log" only logs what it would do, None = "log" for the small local backend (a 4B model's routing ops were mostly invalid on the stage DB) and "auto" for backend=agent.
 # require_valid: one rejected op refuses the whole answer (a half-valid answer usually means the model misread the snapshot). Rounds that fail or are refused back off: interval x2 per bad round, at most max_backoff_s.
 DEFAULTS = dict(enabled=True, interval_s=1800, max_changes=4, max_calls_per_day=24, backend="ollama",
-                agent="ollama-local", model="local-qwen3-4b:latest", difficulty=0.4, ollama="http://127.0.0.1:11434",
+                agent="ollama-local", model="local-qwen3-4b:latest", difficulty=0.4, ollama=_OLLAMA,
                 keep_alive="24h", num_ctx=8192, apply=None, require_valid=True, max_backoff_s=6 * 3600)
 EFFORTS = (None, "low", "medium", "high", "xhigh", "max")
 SYSTEM = """You are the CONDUCTOR of a multi-agent machine: local Ollama, OpenRouter FREE-tier models, and subscription CLIs (Claude, Codex, Grok, Gemini). Your job is to route work so jobs finish with the fewest paid tokens and no stalls.

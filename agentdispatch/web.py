@@ -51,7 +51,7 @@ def make_handler(app):
         def _host_ok(self):
             """DNS-rebinding guard: only requests addressed to this machine by name or loopback address"""
             host = (self.headers.get("Host") or "").split(":")[0].lower()
-            return host in ("127.0.0.1", "localhost", "[::1]")
+            return host in ("127.0.0.1", "localhost", "[::1]") or host in EXTRA_HOSTS
 
         def _send(self, code, body, ctype="application/json"):
             b = body if isinstance(body, bytes) else json.dumps(body, ensure_ascii=False).encode("utf-8")
@@ -359,9 +359,16 @@ def _start_supervisor(app):
         pass
 
 
-def serve(app, port=8870):
-    srv = Server(("127.0.0.1", port), make_handler(app))
-    print("agentdispatch %s on http://127.0.0.1:%d  (MCP: POST /mcp, /mcp/lite  |  home: /  |  board: /board)" % (__version__, port), flush=True)
+# AGENTDISPATCH_HOST: the address to listen on (default 127.0.0.1). The Docker image sets 0.0.0.0 so a published port reaches it; publish it on 127.0.0.1 only.
+# AGENTDISPATCH_ALLOWED_HOSTS: extra Host-header names the DNS-rebinding guard accepts, comma-separated (e.g. the compose service name "agentdispatch").
+BIND_HOST = os.environ.get("AGENTDISPATCH_HOST", "").strip() or "127.0.0.1"
+EXTRA_HOSTS = frozenset(x.strip().lower() for x in os.environ.get("AGENTDISPATCH_ALLOWED_HOSTS", "").split(",") if x.strip())
+
+
+def serve(app, port=8870, host=None):
+    host = host or BIND_HOST
+    srv = Server((host, port), make_handler(app))
+    print("agentdispatch %s on http://%s:%d  (MCP: POST /mcp, /mcp/lite  |  home: /  |  board: /board)" % (__version__, "127.0.0.1" if host in ("0.0.0.0", "") else host, port), flush=True)
     _start_supervisor(app)                                                    # repairs failed jobs of autonomous plans (only when autonomous mode is on)
 
     def housekeeping():

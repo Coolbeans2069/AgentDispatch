@@ -8,12 +8,13 @@ budget allows, then a bigger local model; every call is logged and reported to t
 can say so on a line starting `BOARD:` - the router posts that line on the notice board (and strips it from the answer), so even models
 without tool support can use the board. If every route fails, the router posts the failure itself."""
 import json, os, re, subprocess, threading, time, urllib.error, urllib.parse, urllib.request
+from .paths import OLLAMA_URL as _OLLAMA
 
 from . import openrouter as OR
 from .similarity import similarity
 
 DEFAULTS = dict(
-    ollama_url="http://127.0.0.1:11434", engine_room="http://127.0.0.1:8898", gemini_url="https://generativelanguage.googleapis.com/v1beta/openai",
+    ollama_url=_OLLAMA, engine_room="http://127.0.0.1:8898", gemini_url="https://generativelanguage.googleapis.com/v1beta/openai",
     openrouter_url=OR.API_URL, openrouter_cloud=OR.DEFAULT_CLOUD,
     local_small="local-qwen3-4b", local_big="local-gemma3-27b", vision="qwen2.5vl:7b", cloud="gemini-3.5-flash-lite", cloud_big="gemini-3.8-flash",
     small_max_tokens=3000, local_concurrency=1, local_wait_s=3600, inject_board_note=True, free_vram_gb=6.0, check_vram=True, timeout_s=900, local_timeout_s=14400,

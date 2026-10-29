@@ -1,6 +1,7 @@
 """find models on this computer: known places first (fast), then a time-boxed walk of every fixed drive. No path is hard-coded to one machine: the places come from the environment, the user's home,
 the drives that exist, and folders the user adds. Ollama's own models are read from its API (its blobs folder is never walked)."""
 import hashlib, json, os, re, sys, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 
 from . import classify as C
 
@@ -180,7 +181,7 @@ def walk(root, deadline, max_depth=7, seen_paths=None, stats=None):
                 stack.append((s, depth + 1))
 
 
-def ollama_models(url="http://127.0.0.1:11434"):
+def ollama_models(url=_OLLAMA):
     """the models Ollama has, from its API (names, sizes, families); [] when it is not running"""
     try:
         with urllib.request.urlopen(url + "/api/tags", timeout=2) as r:

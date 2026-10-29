@@ -2,6 +2,7 @@
 which tier of model is next on the escalation ladder (local Ollama at night -> mid cloud -> strong). It only WRITES NOTES AND SUGGESTIONS to the board; it never changes code or runs tools.
 The language model behind it is injected: Gemini free tier first (budget-checked through the engine room), local Ollama as the fallback."""
 import json, os, re, time, urllib.parse, urllib.request
+from .paths import OLLAMA_URL as _OLLAMA
 
 from .similarity import similarity
 
@@ -163,7 +164,7 @@ class Orchestrator:
 
 
 # ------------------------------------------------------------ language models behind the orchestrator
-def ollama_llm(model, url="http://127.0.0.1:11434", timeout=300):
+def ollama_llm(model, url=_OLLAMA, timeout=300):
     def run(system, user):
         from .textfit import ollama_ctx
         body = dict(model=model, stream=False, think=False, format="json", keep_alive="5m", options=dict(temperature=0.1, num_predict=2048, num_ctx=ollama_ctx(len(system) + len(user), 2048, ceiling=65536)),

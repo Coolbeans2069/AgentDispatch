@@ -3,6 +3,7 @@ windows (image / video / speech / music) as tenants of the lobe their work belon
 the 'DNA strand' of one job, a segment per task that fills in as the pipe completes. Nothing here is hard-coded to particular agents: add an entry to the registry and it appears.
 Lobes are FUNCTIONS (planning, code, language, vision, speech, audio, fast reflexes, world knowledge); models are tenants that move into the lobe their current task needs."""
 import json, os, re, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 
 from . import policy
 from .jobs import TERMINAL
@@ -186,8 +187,8 @@ def services(app, ports=(8188, 8189, 8190, 8191, 8192), force=False):
         return _svc["data"]
     out = dict(ollama=dict(up=False, installed=0, loaded=[]), comfy=[], studio=False)
     try:
-        ps = _get_json("http://127.0.0.1:11434/api/ps").get("models", [])
-        out["ollama"] = dict(up=True, installed=len(_get_json("http://127.0.0.1:11434/api/tags").get("models", [])),
+        ps = _get_json(_OLLAMA + "/api/ps").get("models", [])
+        out["ollama"] = dict(up=True, installed=len(_get_json(_OLLAMA + "/api/tags").get("models", [])),
                              loaded=[dict(name=m["name"], size_gb=round(m.get("size", 0) / 2**30, 1), vram_gb=round(m.get("size_vram", 0) / 2**30, 1), lobe=model_lobe(m["name"])) for m in ps])
     except Exception:
         pass
@@ -443,7 +444,7 @@ def roster_models(app, svc=None, active_models=None, warm=None):
 
     # 5) installed Ollama tags that look useful (coder / vision / reason / speech) — standby, not every tiny tag
     try:
-        tags = _get_json("http://127.0.0.1:11434/api/tags").get("models", [])
+        tags = _get_json(_OLLAMA + "/api/tags").get("models", [])
         for m in tags:
             name = m.get("name") or ""
             low = name.lower()
