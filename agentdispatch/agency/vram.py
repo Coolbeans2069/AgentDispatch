@@ -3,6 +3,7 @@ some working buffers. This polls Ollama (installed models /api/tags, loaded mode
 short time, and says for a model and a context whether it fits - and if not, what smaller context would. Memory held by models Ollama has loaded counts as free (Ollama unloads idle models to make room);
 memory held by anything else (renders, other programs) does not. The router asks before it picks a model; the agent's context is chosen here; the conductor sees the same numbers."""
 import json, re, subprocess, threading, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 
 OVERHEAD = 1.15            # working buffers on top of weights + cache
 SLACK_GB = 1.0
@@ -48,7 +49,7 @@ def base_name(model):
 
 
 class VramWatch:
-    def __init__(self, ollama="http://127.0.0.1:11434", fetch=_get, smi=nvidia_smi, now=time.time, ttl=30):
+    def __init__(self, ollama=_OLLAMA, fetch=_get, smi=nvidia_smi, now=time.time, ttl=30):
         self.ollama, self.fetch, self.smi, self.now, self.ttl = ollama, fetch, smi, now, ttl
         self._c, self._lock = {}, threading.Lock()
 

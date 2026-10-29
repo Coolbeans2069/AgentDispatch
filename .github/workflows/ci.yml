@@ -30,3 +30,47 @@ jobs:
         run: python tests/integration_engineroom.py
       - name: Business demo MCP server (examples/mcp-b1-demo)
         run: python examples/mcp-b1-demo/tests/run_tests.py
+
+  docker:
+    # builds the image (never pushed anywhere) and smoke-tests it: non-root, /api/stats answers, the HEALTHCHECK turns healthy,
+    # and in compose the Engine Room reaches the broker by its service name
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image (no push)
+        run: docker build --pull -t agentdispatch:ci .
+      - name: Image size
+        run: docker image ls agentdispatch:ci --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+      - name: Runs as a non-root user
+        run: |
+          uid="$(docker run --rm --entrypoint id agentdispatch:ci -u)"
+          echo "uid=$uid"
+          test "$uid" != "0"
+      - name: CLI help
+        run: docker run --rm agentdispatch:ci --help
+      - name: Broker smoke test
+        run: |
+          docker run -d --name ad -p 127.0.0.1:8870:8870 agentdispatch:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8870/api/stats && break; sleep 2; done
+          curl -fsS http://127.0.0.1:8870/api/stats | grep -q '"ok": true'
+          code="$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.example' http://127.0.0.1:8870/api/stats)"
+          test "$code" = "403"
+          for i in $(seq 1 30); do s="$(docker inspect -f '{{.State.Health.Status}}' ad)"; echo "health: $s"; [ "$s" = healthy ] && break; sleep 3; done
+          test "$(docker inspect -f '{{.State.Health.Status}}' ad)" = healthy
+      - name: Broker logs
+        if: always()
+        run: docker logs ad || true
+      - name: Compose smoke test (broker + Engine Room)
+        run: |
+          docker tag agentdispatch:ci agentdispatch:local
+          docker compose config -q
+          docker compose --profile engineroom up -d --no-build
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8898/agents >/dev/null && break; sleep 2; done
+          curl -fsS http://127.0.0.1:8898/agents >/dev/null
+          docker compose exec -T engineroom python -c "import urllib.request; assert urllib.request.urlopen('http://agentdispatch:8870/api/agency', timeout=5).status == 200; print('engine room reaches the broker')"
+          docker compose --profile engineroom ps
+        env:
+          AGENTDISPATCH_PORT: "18870"
+      - name: Compose cleanup
+        if: always()
+        run: docker compose --profile engineroom down -v || true

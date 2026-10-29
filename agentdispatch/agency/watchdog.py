@@ -4,6 +4,7 @@ model which unlocked path to try next. Safe by default — never auto-accepts me
 from __future__ import annotations
 
 import json, os, re, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 
 from ..textfit import fit as _wfit
 
@@ -14,7 +15,7 @@ DEFAULTS = dict(
     interval_s=90,
     stale_running_s=1800,          # running with no open task this long => stuck
     model="local-qwen3-4b:latest",
-    ollama="http://127.0.0.1:11434",
+    ollama=_OLLAMA,
     use_llm=True,
     max_actions_per_tick=2,
     auto_block=True,

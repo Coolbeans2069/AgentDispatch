@@ -4,6 +4,7 @@ handled here:
   POST /g/<token>/mcp                  -> the broker's MCP server, in-process, as an agent identity: only the tools on the capability list, and tool_run is pinned to the run's own workspace copy and job
 No key or token of the broker is ever inside the container, and the run token stops working when the run ends."""
 import fnmatch, http.client, json, os, posixpath, secrets, threading, time
+from ..paths import OLLAMA_URL as _OLLAMA
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -12,7 +13,7 @@ MAX_REQUESTS = 3000
 
 
 class Gateway:
-    def __init__(self, app, capabilities, port=8871, ollama="http://127.0.0.1:11434", now=time.time):
+    def __init__(self, app, capabilities, port=8871, ollama=_OLLAMA, now=time.time):
         self.app, self.caps, self.port, self.now = app, capabilities, port, now
         u = urlparse(ollama)
         self.ollama_host, self.ollama_port = u.hostname, u.port or 11434

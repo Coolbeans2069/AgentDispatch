@@ -2,8 +2,9 @@
 Ollama, video is split into a few frames plus its sound track. Nothing tries to identify people. Everything runs on this computer; when a GPU is
 busy with a render the vision step waits instead of competing for it."""
 import base64, io, json, os, re, threading, time, urllib.request
+from ..paths import OLLAMA_URL as _OLLAMA
 
-OLLAMA = "http://127.0.0.1:11434"
+OLLAMA = _OLLAMA
 VISION_PROMPT = ("Describe this picture for someone who will build something from it: what is in it, the layout, any text, numbers, dimensions or labels you can read, materials, colours and anything "
                  "that looks like a requirement. Be concrete and brief (under 120 words). Do not guess who a person is.")
 

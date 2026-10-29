@@ -2,6 +2,17 @@
 
 All notable changes to this project are listed here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Docker support: a multi-stage `Dockerfile` (Python 3.12 slim, non-root user with UID/GID 10001, `HEALTHCHECK` on `/api/stats`, ports 8870 and 8898), a `.dockerignore`, and an example `docker-compose.yml` with named volumes, the Engine Room under the `engineroom` profile and an optional Ollama service under the `ollama` profile. The image is not published to a registry.
+- `AGENTDISPATCH_HOST` (and `serve --host`) sets the listen address (default unchanged: 127.0.0.1); `AGENTDISPATCH_ALLOWED_HOSTS` adds Host-header names to the DNS-rebinding guard.
+- CI: a `docker` job builds the image without pushing it and smoke-tests the container and the compose setup.
+
+### Changed
+- `OLLAMA_URL` (already in `.env.example`) is now honoured by every Ollama caller in the broker, not only the Engine Room; the default is still `http://127.0.0.1:11434`.
+- The package data now includes the agent sandbox files (`agent_entry.sh`, `agent.Dockerfile`), so a `pip install` has them too.
+
 ## [0.1.1] - 2026-10-28
 
 ### Added

@@ -37,4 +37,4 @@ Issues = "https://github.com/Coolbeans2069/AgentDispatch/issues"
 include = ["agentdispatch*", "engineroom*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.json", "*.md", "*.html", "*.txt", "*.py"]
+"*" = ["*.json", "*.md", "*.html", "*.txt", "*.py", "*.sh", "*.Dockerfile"]

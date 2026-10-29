@@ -1,0 +1,89 @@
+# Example: run AgentDispatch (and, optionally, the Engine Room and Ollama) with Docker Compose.
+#
+#   docker compose up -d --build                         # the broker on http://127.0.0.1:8870/
+#   docker compose --profile engineroom up -d --build    # + the Engine Room on http://127.0.0.1:8898/
+#   OLLAMA_URL_DOCKER=http://ollama:11434 docker compose --profile ollama up -d   # + an Ollama container
+#   docker compose exec agentdispatch python -m agentdispatch token me --owner
+#
+# Configuration comes from environment variables. Put real values in a git-ignored .env file next to this
+# one (copy .env.example); it is optional, and every default below is a placeholder. Nothing secret is
+# baked into the image. Ports are published on 127.0.0.1 only: the broker is meant for this machine.
+
+# Service addresses as the containers see them. They are fixed here on purpose so the 127.0.0.1 values in a
+# .env copied from .env.example (meant for running without Docker) do not leak in. OLLAMA_URL_DOCKER picks the
+# Ollama server: the host's (default) or the optional "ollama" service (http://ollama:11434).
+x-common-env: &common-env
+  OLLAMA_URL: ${OLLAMA_URL_DOCKER:-http://host.docker.internal:11434}
+  ENGINEROOM_URL: http://engineroom:8898
+  AGENTDISPATCH_URL: http://agentdispatch:8870
+
+services:
+  agentdispatch:
+    build: .
+    image: agentdispatch:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *common-env
+      # the compose service name must pass the DNS-rebinding guard so the Engine Room can read /api/agency
+      AGENTDISPATCH_ALLOWED_HOSTS: agentdispatch
+      AGENTDISPATCH_HOST: 0.0.0.0
+      # in-container paths; mount your own project folders under /projects
+      AGENTDISPATCH_DATA: /data
+      AGENTDISPATCH_PROJECTS_ROOT: /projects
+      AGENTDISPATCH_ALLOWED_ROOTS: /projects
+      AGENTDISPATCH_WORK_DIR: /tmp/agentdispatch-work
+      # optional cloud keys: leave empty to run local-only (set them in .env, never here)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "127.0.0.1:${AGENTDISPATCH_PORT:-8870}:8870"
+    volumes:
+      - agentdispatch-data:/data
+      - agentdispatch-projects:/projects
+    extra_hosts:
+      - "host.docker.internal:host-gateway"     # reach an Ollama running on the host (Linux; built in on Docker Desktop)
+    restart: unless-stopped
+
+  engineroom:
+    profiles: ["engineroom"]
+    image: agentdispatch:local
+    build: .
+    entrypoint: ["python", "-m", "engineroom", "--no-window"]
+    command: []
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *common-env
+      ENGINEROOM_HOST: 0.0.0.0
+      ENGINEROOM_PORT: 8898
+      ENGINEROOM_DATA: /data/engineroom
+      ENGINEROOM_NO_LIVE_LIMITS: ${ENGINEROOM_NO_LIVE_LIMITS:-1}
+    ports:
+      - "127.0.0.1:${ENGINEROOM_PORT:-8898}:8898"
+    volumes:
+      - engineroom-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8898/agents', timeout=4).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  agentdispatch-data:
+  agentdispatch-projects:
+  engineroom-data:
+  ollama-models:

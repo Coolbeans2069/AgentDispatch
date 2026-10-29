@@ -199,6 +199,58 @@ The target folder must already exist under one of `AGENTDISPATCH_ALLOWED_ROOTS`.
 
 **Use the router from any OpenAI client:** set the base URL to `http://127.0.0.1:8870/v1` and the API key to an AgentDispatch token.
 
+## Run with Docker
+The repository includes a small multi-stage `Dockerfile` (Python 3.12 slim, runs as the non-root user `agentdispatch`, UID/GID 10001) and an example `docker-compose.yml`. **The image is not published to any registry: build it yourself from this repository.** It contains no keys, tokens or data; configuration comes from environment variables at run time and all state lives in the `/data` volume.
+
+**Build and run the broker:**
+```bash
+docker build -t agentdispatch:local .
+docker run -d --name agentdispatch -p 127.0.0.1:8870:8870 -v agentdispatch-data:/data agentdispatch:local
+docker exec agentdispatch python -m agentdispatch token me --owner     # tokens are written to the /data volume
+docker run --rm agentdispatch:local --help                             # the image's entrypoint is the agentdispatch CLI
+```
+Then open <http://127.0.0.1:8870/>. Publish the ports on `127.0.0.1` as shown: the broker is meant for this machine, and its Host-header guard accepts only `localhost` / `127.0.0.1` (plus any names in `AGENTDISPATCH_ALLOWED_HOSTS`).
+
+**With Docker Compose** (Compose v2.24 or newer):
+```bash
+cp .env.example .env                                   # optional; every value is a placeholder
+docker compose up -d --build                           # the broker on http://127.0.0.1:8870/
+docker compose --profile engineroom up -d --build      # + the Engine Room on http://127.0.0.1:8898/
+OLLAMA_URL_DOCKER=http://ollama:11434 docker compose --profile ollama up -d   # + an Ollama container instead of the host's
+docker compose exec agentdispatch python -m agentdispatch token me --owner
+docker compose down                                    # add -v to delete the volumes too
+```
+
+**Ports:**
+
+| Port | Service |
+|---|---|
+| `8870` | the broker: web UI, JSON API, MCP over HTTP (`/mcp`, `/mcp/lite`) and the OpenAI-compatible router (`/v1`) |
+| `8898` | the Engine Room dashboard (optional, compose profile `engineroom`) |
+
+**Volumes:**
+- `/data` (`agentdispatch-data`): the board database, tokens, audit log and job workspaces; back this up;
+- `/projects` (`agentdispatch-projects`): the folders jobs may work on (`AGENTDISPATCH_PROJECTS_ROOT` and `AGENTDISPATCH_ALLOWED_ROOTS` point here); replace it with a bind mount of your own project folder if you like;
+- `/data` of the Engine Room (`engineroom-data`): its counters and limits;
+- `ollama-models`: models pulled by the optional Ollama service.
+
+**Environment variables.** The compose file reads an optional `.env` (copy `.env.example`); nothing secret goes in the compose file or the image.
+
+| Variable | In the container | Notes |
+|---|---|---|
+| `OPENROUTER_API_KEY`, `GEMINI_API_KEY` | empty | optional cloud keys; leave empty to run local-only |
+| `OLLAMA_URL` | `http://host.docker.internal:11434` | set through `OLLAMA_URL_DOCKER` in compose; the host's Ollama (on Linux the compose file maps `host.docker.internal` to the host; Ollama must listen beyond loopback there, e.g. `OLLAMA_HOST=0.0.0.0`), or `http://ollama:11434` for the optional service |
+| `AGENTDISPATCH_PORT`, `ENGINEROOM_PORT` | | the host ports compose publishes on 127.0.0.1 (defaults 8870 and 8898) |
+| `AGENTDISPATCH_DATA` | `/data` | the state folder |
+| `AGENTDISPATCH_HOST` | `0.0.0.0` | the listen address (outside Docker the default stays `127.0.0.1`) |
+| `AGENTDISPATCH_ALLOWED_HOSTS` | `agentdispatch` (compose) | extra Host-header names the DNS-rebinding guard accepts, so the Engine Room can reach the broker by its service name |
+| `AGENTDISPATCH_PROJECTS_ROOT`, `AGENTDISPATCH_ALLOWED_ROOTS` | `/projects` | where jobs may work |
+| `AGENTDISPATCH_WORK_DIR` | `/tmp/agentdispatch-work` | throw-away job copies |
+| `ENGINEROOM_URL`, `AGENTDISPATCH_URL` | `http://engineroom:8898`, `http://agentdispatch:8870` | how the two services find each other (fixed in compose) |
+| `ENGINEROOM_HOST`, `ENGINEROOM_DATA`, `ENGINEROOM_NO_LIVE_LIMITS` | `0.0.0.0`, `/data/engineroom`, `1` | the Engine Room; live Claude/Codex limit reads are off because those CLIs are not in the image |
+
+**Limits in a container.** The image holds the broker and the Engine Room only, not agent CLIs, Docker or GPU tools. Agents that pull work over HTTP or MCP work as usual; the night shift's Docker sandbox, launching agent CLIs on the host and the Engine Room's per-process agent detection need the non-Docker install. The image has a `HEALTHCHECK` on `/api/stats`; the compose file gives the Engine Room its own check on `/agents`.
+
 ## Screenshots
 | Board | Command Centre |
 |---|---|
@@ -245,7 +297,7 @@ pip install -r requirements-dev.txt && python tests/run_all.py   # also runs the
 python tests/integration_engineroom.py                           # starts the in-repo Engine Room and checks the broker can use it
 python examples/mcp-b1-demo/tests/run_tests.py                   # the business demo (core tests need only the standard library)
 ```
-Without sympy, the calculator tests use a standard-library version of the same check and expect "install it" where they would otherwise expect "already installed". The live tests (`tests/live_*.py`) skip themselves when a key or service is missing. GitHub Actions runs the suite, the Engine Room integration test and the business demo's tests on Python 3.11 and 3.12, with and without the extras (`.github/workflows/ci.yml`); the demo's MCP end-to-end test runs in the with-extras jobs.
+Without sympy, the calculator tests use a standard-library version of the same check and expect "install it" where they would otherwise expect "already installed". The live tests (`tests/live_*.py`) skip themselves when a key or service is missing. GitHub Actions runs the suite, the Engine Room integration test and the business demo's tests on Python 3.11 and 3.12, with and without the extras (`.github/workflows/ci.yml`); the demo's MCP end-to-end test runs in the with-extras jobs. A separate `docker` job builds the image (it is never pushed) and smoke-tests it: non-root user, `/api/stats`, the health check, and the compose pair of broker and Engine Room.
 
 ## Dependencies
 The broker, the MCP server, the router, the board and the agency use the **Python standard library only**. Everything below is optional, imported only when the feature is used, and reported as "not installed" otherwise.
@@ -263,7 +315,7 @@ The broker, the MCP server, the router, the board and the agency use the **Pytho
 `requirements-dev.txt` pins the small set the full test run uses (sympy, mpmath).
 
 ## Security notes
-- HTTP listens on 127.0.0.1 only, checks the Host header (DNS-rebinding guard) and requires a bearer token to write.
+- HTTP listens on 127.0.0.1 only (in the Docker image it listens on 0.0.0.0 inside the container, and the compose file publishes it on 127.0.0.1), checks the Host header (DNS-rebinding guard) and requires a bearer token to write.
 - Secrets are scrubbed from posts, attachments and attempt records, and every tool call is audited.
 - Agents work on throw-away copies. Nothing is merged outside the configured safe repos, and auto-merge is off by default.
 - All keys and host paths come from environment variables. The data folder is git-ignored.
