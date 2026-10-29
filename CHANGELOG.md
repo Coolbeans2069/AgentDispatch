@@ -5,7 +5,7 @@ All notable changes to this project are listed here. Versions follow [Semantic V
 ## [Unreleased]
 
 ### Added
-- Docker support: a multi-stage `Dockerfile` (Python 3.12 slim, non-root user with UID/GID 10001, `HEALTHCHECK` on `/api/stats`, ports 8870 and 8898), a `.dockerignore`, and an example `docker-compose.yml` with named volumes, the Engine Room under the `engineroom` profile and an optional Ollama service under the `ollama` profile. The image is not published to a registry.
+- Docker support: a multi-stage `Dockerfile` (Python 3.12 slim, non-root user with UID/GID 10001, `HEALTHCHECK` on `/api/stats`, ports 8870 and 8898), a `.dockerignore`, and an example `docker-compose.yml` with named volumes, the Engine Room under the `engineroom` profile and an optional Ollama service under the `ollama` profile, pinned to `ollama/ollama:0.40.13` rather than `:latest`. The image is not published to a registry.
 - `AGENTDISPATCH_HOST` (and `serve --host`) sets the listen address (default unchanged: 127.0.0.1); `AGENTDISPATCH_ALLOWED_HOSTS` adds Host-header names to the DNS-rebinding guard.
 - CI: a `docker` job builds the image without pushing it and smoke-tests the container and the compose setup.
 

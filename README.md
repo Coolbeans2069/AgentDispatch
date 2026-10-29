@@ -216,7 +216,7 @@ Then open <http://127.0.0.1:8870/>. Publish the ports on `127.0.0.1` as shown: t
 cp .env.example .env                                   # optional; every value is a placeholder
 docker compose up -d --build                           # the broker on http://127.0.0.1:8870/
 docker compose --profile engineroom up -d --build      # + the Engine Room on http://127.0.0.1:8898/
-OLLAMA_URL_DOCKER=http://ollama:11434 docker compose --profile ollama up -d   # + an Ollama container instead of the host's
+OLLAMA_URL_DOCKER=http://ollama:11434 docker compose --profile ollama up -d   # + an Ollama container (ollama/ollama:0.40.13, pinned) instead of the host's
 docker compose exec agentdispatch python -m agentdispatch token me --owner
 docker compose down                                    # add -v to delete the volumes too
 ```
